@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budgets - Personal Finance Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="dashboard.html">Personal Finance Manager</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="dashboard.html">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="expenses.html">Expenses</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="budgets.php">Budgets</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="reports.html">Reports</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="categories.php">Categories</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" id="user-dropdown">
+                            Loading...
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="profile.html"><i class="fas fa-user"></i> My Profile</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="../backend/auth/logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container mt-4">
+        <?php
+        session_start();
+        if (isset($_SESSION['error'])) {
+            echo '<div class="alert alert-danger">' . htmlspecialchars($_SESSION['error']) . '</div>';
+            unset($_SESSION['error']);
+        }
+        if (isset($_SESSION['success'])) {
+            echo '<div class="alert alert-success">' . htmlspecialchars($_SESSION['success']) . '</div>';
+            unset($_SESSION['success']);
+        }
+        ?>
+        
+        <div class="row">
+            <!-- Set Budget Form -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Set Monthly Budget</h5>
+                    </div>
+                    <div class="card-body">
+                        <form action="../backend/budgets/set.php" method="POST">
+                            <div class="mb-3">
+                                <label class="form-label">Budget Amount (KSh)</label>
+                                <input type="number" name="amount" step="0.01" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Month</label>
+                                <select name="month" class="form-control" required>
+                                    <option value="1">January</option>
+                                    <option value="2">February</option>
+                                    <option value="3">March</option>
+                                    <option value="4">April</option>
+                                    <option value="5">May</option>
+                                    <option value="6">June</option>
+                                    <option value="7">July</option>
+                                    <option value="8">August</option>
+                                    <option value="9">September</option>
+                                    <option value="10">October</option>
+                                    <option value="11">November</option>
+                                    <option value="12">December</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Year</label>
+                                <select name="year" class="form-control" required>
+                                    <option value="2024">2024</option>
+                                    <option value="2025">2025</option>
+                                    <option value="2026">2026</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Set Budget</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Budget Overview -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Budget Overview</h5>
+                    </div>
+                    <div class="card-body" id="budgets-list">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading budgets...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        async function loadUserInfo() {
+            try {
+                const response = await fetch('../backend/api/user.php');
+                const data = await response.json();
+                
+                if (!data.authenticated) {
+                    window.location.href = 'login.php';
+                    return;
+                }
+                
+                document.getElementById('user-dropdown').textContent = data.user_name;
+            } catch (error) {
+                console.error('Error loading user info:', error);
+            }
+        }
+
+        async function loadBudgets() {
+            try {
+                const response = await fetch('../backend/api/budgets.php');
+                const data = await response.json();
+                
+                if (data.error && data.error === 'Not authenticated') {
+                    window.location.href = 'login.php';
+                    return;
+                }
+                
+                const budgets = Array.isArray(data) ? data : [];
+                const container = document.getElementById('budgets-list');
+                
+                if (budgets.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-piggy-bank fa-4x mb-3"></i>
+                            <h4>No budgets set yet</h4>
+                            <p>Create your first budget to start tracking your spending limits.</p>
+                            <p class="small">Use the form on the left to set a monthly budget and monitor your expenses.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = '';
+                budgets.forEach(budget => {
+                    const statusClass = budget.status === 'success' ? 'bg-success' : 
+                                       budget.status === 'warning' ? 'bg-warning' : 'bg-danger';
+                    
+                    html += `<div class="card mb-3">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <h6>${budget.month_name}</h6>
+                                </div>
+                                <div class="col-md-9">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Budget: KSh ${budget.amount}</span>
+                                        <span>Spent: KSh ${budget.spent}</span>
+                                    </div>
+                                    <div class="progress mb-2">
+                                        <div class="progress-bar ${statusClass}" style="width: ${Math.min(budget.percentage, 100)}%">
+                                            ${budget.percentage}%
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">
+                                        Remaining: KSh ${budget.remaining}
+                                        ${parseFloat(budget.remaining) < 0 ? 
+                                            `<span class="text-danger">(Over budget by KSh ${Math.abs(parseFloat(budget.remaining)).toFixed(2)})</span>` : 
+                                            ''}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                
+                container.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Error loading budgets:', error);
+                document.getElementById('budgets-list').innerHTML = `
+                    <div class="alert alert-warning text-center">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Unable to load budgets</strong><br>
+                        Please check your connection and try again.
+                    </div>
+                `;
+            }
+        }
+        
+        // Set current month and year as default
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentMonth = new Date().getMonth() + 1;
+            const currentYear = new Date().getFullYear();
+            
+            document.querySelector('select[name="month"]').value = currentMonth;
+            document.querySelector('select[name="year"]').value = currentYear;
+            
+            loadUserInfo();
+            loadBudgets();
+        });
+    </script>
+</body>
+</html>

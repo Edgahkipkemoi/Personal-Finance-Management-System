@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expenses - Personal Finance Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="dashboard.html">Personal Finance Manager</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="dashboard.html">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="expenses.html">Expenses</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="budgets.php">Budgets</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="reports.html">Reports</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="categories.php">Categories</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" id="user-dropdown">
+                            Loading...
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="profile.html"><i class="fas fa-user"></i> My Profile</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="../backend/auth/logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container mt-4">
+        <div class="row">
+            <!-- Add Expense Form -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Add New Expense</h5>
+                    </div>
+                    <div class="card-body">
+                        <form action="../backend/expenses/add.php" method="POST">
+                            <div class="mb-3">
+                                <label class="form-label">Amount (KSh)</label>
+                                <input type="number" name="amount" step="0.01" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Description</label>
+                                <input type="text" name="description" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Date</label>
+                                <input type="date" name="expense_date" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Category</label>
+                                <select name="category_id" class="form-control" id="category-select" required>
+                                    <option value="">Loading categories...</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Add Expense</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Expenses List -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5>Expense History</h5>
+                        <a href="../backend/expenses/export.php" class="btn btn-success btn-sm">Export CSV</a>
+                    </div>
+                    <div class="card-body">
+                        <div id="expenses-list">
+                            <div class="text-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2">Loading expenses...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Load categories and expenses
+        async function loadPageData() {
+            await loadUserInfo();
+            await loadCategories();
+            await loadExpenses();
+        }
+        
+        async function loadUserInfo() {
+            try {
+                const response = await fetch('../backend/api/user.php');
+                const data = await response.json();
+                
+                if (!data.authenticated) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
+                document.getElementById('user-dropdown').textContent = data.user_name;
+            } catch (error) {
+                console.error('Error loading user info:', error);
+            }
+        }
+        
+        async function loadCategories() {
+            try {
+                const response = await fetch('../backend/api/categories.php');
+                const categories = await response.json();
+                
+                const select = document.getElementById('category-select');
+                select.innerHTML = '<option value="">Select Category</option>';
+                
+                categories.forEach(category => {
+                    select.innerHTML += `<option value="${category.id}">${category.name}</option>`;
+                });
+            } catch (error) {
+                console.error('Error loading categories:', error);
+            }
+        }
+        
+        async function loadExpenses() {
+            try {
+                const response = await fetch('../backend/api/expenses.php');
+                const data = await response.json();
+                
+                // Check if user is authenticated
+                if (data.error && data.error === 'Not authenticated') {
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
+                const expenses = Array.isArray(data) ? data : [];
+                const container = document.getElementById('expenses-list');
+                
+                if (expenses.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-receipt fa-4x mb-3"></i>
+                            <h4>No expenses yet</h4>
+                            <p>Start tracking your spending by adding your first expense.</p>
+                            <p class="small">Use the form on the left to record your transactions.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = '<div class="table-responsive"><table class="table table-hover"><thead class="table-dark"><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th>Actions</th></tr></thead><tbody>';
+                
+                expenses.forEach(expense => {
+                    html += `<tr>
+                        <td>${expense.date}</td>
+                        <td><span class="badge bg-secondary">${expense.category}</span></td>
+                        <td>${expense.description}</td>
+                        <td><strong>KSh ${expense.amount}</strong></td>
+                        <td>
+                            <form method="POST" action="../backend/expenses/delete.php" style="display: inline;">
+                                <input type="hidden" name="expense_id" value="${expense.id}">
+                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this expense?')">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </form>
+                        </td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table></div>';
+                
+                // Add pagination info if there are many expenses
+                if (expenses.length >= 10) {
+                    html += `<div class="text-center mt-3">
+                        <small class="text-muted">Showing ${expenses.length} expenses</small>
+                    </div>`;
+                }
+                
+                container.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Error loading expenses:', error);
+                document.getElementById('expenses-list').innerHTML = `
+                    <div class="alert alert-warning text-center">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Unable to load expenses</strong><br>
+                        Please check your connection and try again.
+                    </div>
+                `;
+            }
+        }
+        
+        // Set today's date as default
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.querySelector('input[name="expense_date"]').value = today;
+            
+            loadPageData();
+        });
+    </script>
+</body>
+</html>

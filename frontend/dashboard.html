@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Personal Finance Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="dashboard.html">Personal Finance Manager</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="dashboard.html">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="expenses.html">Expenses</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="budgets.php">Budgets</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="reports.html">Reports</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="categories.php">Categories</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" id="user-dropdown">
+                            Loading...
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="profile.html"><i class="fas fa-user"></i> My Profile</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="../backend/auth/logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container mt-4">
+        <h2 id="welcome-message">Welcome to Your Dashboard!</h2>
+        
+        <!-- Summary Cards -->
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card text-white bg-primary mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Monthly Expenses</h5>
+                        <h3 id="monthly-expenses">KSh 0.00</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-success mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Monthly Budget</h5>
+                        <h3 id="monthly-budget">KSh 0.00</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-info mb-3" id="remaining-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Remaining</h5>
+                        <h3 id="remaining-budget">KSh 0.00</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Recent Expenses -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Recent Expenses</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="recent-expenses">
+                            <div class="text-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2">Loading recent expenses...</p>
+                            </div>
+                        </div>
+                        <a href="expenses.html" class="btn btn-primary">View All Expenses</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Category Breakdown -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Category Breakdown</h5>
+                    </div>
+                    <div class="card-body" id="category-breakdown">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading categories...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Load dashboard data from PHP backend
+        async function loadDashboardData() {
+            try {
+                const response = await fetch('../backend/api/dashboard.php');
+                const data = await response.json();
+                
+                // Check if user is authenticated
+                if (data.error && data.error === 'Not authenticated') {
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
+                // Update welcome message with user name
+                if (data.user_name) {
+                    document.getElementById('welcome-message').textContent = `Welcome, ${data.user_name}!`;
+                    document.getElementById('user-dropdown').textContent = data.user_name;
+                }
+                
+                // Update summary cards
+                document.getElementById('monthly-expenses').textContent = 'KSh ' + (data.monthly_total || '0.00');
+                document.getElementById('monthly-budget').textContent = 'KSh ' + (data.budget_amount || '0.00');
+                
+                const remaining = parseFloat(data.remaining || 0);
+                document.getElementById('remaining-budget').textContent = 'KSh ' + (data.remaining || '0.00');
+                
+                // Update remaining card color based on budget status
+                const remainingCard = document.getElementById('remaining-card');
+                remainingCard.className = 'card text-white mb-3 ' + (remaining < 0 ? 'bg-danger' : 'bg-info');
+                
+                // Update recent expenses
+                updateRecentExpenses(data.recent_expenses || []);
+                
+                // Update category breakdown
+                updateCategoryBreakdown(data.category_breakdown || []);
+                
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+                showEmptyState();
+            }
+        }
+        
+        function updateRecentExpenses(expenses) {
+            const container = document.getElementById('recent-expenses');
+            
+            if (expenses.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-muted">
+                        <i class="fas fa-receipt fa-3x mb-3"></i>
+                        <h5>No expenses yet</h5>
+                        <p>Start tracking your expenses by adding your first transaction.</p>
+                        <a href="expenses.html" class="btn btn-primary">Add Your First Expense</a>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '<table class="table"><thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th></tr></thead><tbody>';
+            expenses.forEach(expense => {
+                html += `<tr>
+                    <td>${expense.date}</td>
+                    <td><span class="badge bg-secondary">${expense.category}</span></td>
+                    <td>${expense.description}</td>
+                    <td><strong>KSh ${expense.amount}</strong></td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+        
+        function updateCategoryBreakdown(categories) {
+            const container = document.getElementById('category-breakdown');
+            
+            if (categories.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-muted">
+                        <i class="fas fa-chart-pie fa-2x mb-3"></i>
+                        <h6>No spending data</h6>
+                        <p class="small">Your spending breakdown will appear here once you add expenses.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            categories.forEach(category => {
+                const percentage = category.percentage || 0;
+                html += `<div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="small">${category.name}</span>
+                        <span class="small"><strong>KSh ${category.total}</strong></span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar" style="width: ${percentage}%" title="${percentage}%"></div>
+                    </div>
+                    <small class="text-muted">${percentage}% of total spending</small>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+        
+        function showEmptyState() {
+            // Show empty state for new users or when there's an error
+            document.getElementById('monthly-expenses').textContent = 'KSh 0.00';
+            document.getElementById('monthly-budget').textContent = 'KSh 0.00';
+            document.getElementById('remaining-budget').textContent = 'KSh 0.00';
+            
+            updateRecentExpenses([]);
+            updateCategoryBreakdown([]);
+        }
+        
+        // Load data when page loads
+        document.addEventListener('DOMContentLoaded', loadDashboardData);
+    </script>
+</body>
+</html>
