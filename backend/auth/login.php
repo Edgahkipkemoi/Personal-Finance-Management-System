@@ -3,7 +3,7 @@ session_start();
 require_once '../config/database.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: ../../frontend/login.html');
+    header('Location: ../../frontend/login.php');
     exit();
 }
 
@@ -12,7 +12,7 @@ $password = $_POST['password'] ?? '';
 
 if (empty($email) || empty($password)) {
     $_SESSION['error'] = 'Email and password are required';
-    header('Location: ../../frontend/login.html');
+    header('Location: ../../frontend/login.php');
     exit();
 }
 
@@ -46,7 +46,6 @@ try {
     $_SESSION['error'] = 'Database error: ' . $e->getMessage();
 }
 
-header('Location: ../../frontend/login.html');
+header('Location: ../../frontend/login.php');
 exit();
-?>
 ?>

@@ -1,5 +1,4 @@
 -- Demo Dataset for Personal Finance Management System
--- Created by: Edgah Kipkemoi (22/06846)
 
 -- Demo Users
 INSERT INTO users (name, email, password) VALUES 

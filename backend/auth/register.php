@@ -3,7 +3,7 @@ session_start();
 require_once '../config/database.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: ../../frontend/login.html');
+    header('Location: ../../frontend/login.php');
     exit();
 }
 
@@ -13,13 +13,13 @@ $password = $_POST['password'] ?? '';
 
 if (empty($name) || empty($email) || empty($password)) {
     $_SESSION['error'] = 'All fields are required';
-    header('Location: ../../frontend/login.html');
+    header('Location: ../../frontend/login.php');
     exit();
 }
 
 if (strlen($password) < 6) {
     $_SESSION['error'] = 'Password must be at least 6 characters';
-    header('Location: ../../frontend/login.html');
+    header('Location: ../../frontend/login.php');
     exit();
 }
 
@@ -35,7 +35,7 @@ try {
     
     if ($check_stmt->rowCount() > 0) {
         $_SESSION['error'] = 'Email already registered';
-        header('Location: ../../frontend/login.html');
+        header('Location: ../../frontend/login.php');
         exit();
     }
     
@@ -73,13 +73,13 @@ try {
         exit();
     } else {
         $_SESSION['error'] = 'Registration failed';
-        header('Location: ../../frontend/login.html');
+        header('Location: ../../frontend/login.php');
         exit();
     }
     
 } catch (Exception $e) {
     $_SESSION['error'] = 'Database error: ' . $e->getMessage();
-    header('Location: ../../frontend/login.html');
+    header('Location: ../../frontend/login.php');
     exit();
 }
 ?>

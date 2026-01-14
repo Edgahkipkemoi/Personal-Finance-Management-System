@@ -1,187 +1,187 @@
 # Personal Finance Management System
 
+A comprehensive web-based application for tracking expenses, managing budgets, and analyzing spending patterns.
+
 **Student:** Edgah Kipkemoi  
 **Registration No:** 22/06846  
 **Course:** BSD 3106 - Bachelor of Software Development  
-**Supervisor:** Griffin Kenga  
-**Date:** 6/12/2025
-
-## Overview
-A comprehensive web-based Personal Finance Management System that helps users track expenses, manage budgets, and generate insightful financial reports. Built as part of the BSD 3106 coursework, this system addresses the need for accessible financial tracking tools for students, young professionals, and individuals seeking better financial discipline.
+**Supervisor:** Griffin Kenga
 
 ## Features
-- **Expense Management:** Add, edit, delete, and categorize expenses
-- **Budget Planning:** Set monthly budgets with visual progress tracking
-- **Financial Reports:** Interactive charts and detailed analytics
-- **Category Management:** Custom expense categories with default options
-- **Data Export:** CSV export functionality for external analysis
-- **User Authentication:** Secure login and registration system
-- **Responsive Design:** Mobile-friendly interface using Bootstrap
-- **Real-time Analytics:** Dashboard with spending insights
+
+- 💰 **Expense Tracking** - Add, view, and delete expenses with categories
+- 📊 **Budget Management** - Set monthly budgets and monitor spending
+- 📈 **Financial Reports** - Interactive charts and detailed analytics
+- 📁 **Data Export** - Export expenses to CSV format
+- 🔐 **User Authentication** - Secure login and registration
+- 🔄 **Password Reset** - Forgot password functionality
+- 📱 **Responsive Design** - Works on desktop, tablet, and mobile
 
 ## Technology Stack
-- **Frontend:** HTML5, CSS3, JavaScript ES6+, Bootstrap 5.3
-- **Backend:** PHP 7.4+
-- **Database:** MySQL 5.7+ / MariaDB 10.2+
-- **Charts:** Chart.js for data visualization
-- **Development Environment:** XAMPP/WAMP/LAMP
 
-## Quick Start
+- **Frontend:** HTML5, CSS3, JavaScript, Bootstrap 5.3
+- **Backend:** PHP 8.3
+- **Database:** MySQL 8.0
+- **Charts:** Chart.js
+- **Server:** PHP Built-in Server / Apache
 
-### Option 1: Automated Installation (Recommended)
-1. Download and extract the system files
-2. Place in your web server directory (e.g., `htdocs` for XAMPP)
-3. Navigate to `http://localhost/personal-finance-system/install.php`
-4. Follow the installation wizard
-5. Delete `install.php` after successful installation
+## Installation
 
-### Option 2: Manual Installation
-1. Install XAMPP/WAMP/LAMP stack
-2. Create database named `personal_finance`
-3. Import `database/schema.sql`
-4. Configure database connection in `config/database.php`
-5. Access via `http://localhost/personal-finance-system`
+### Prerequisites
+- PHP 8.0 or higher
+- MySQL 8.0 or higher
+- Web browser (Chrome, Firefox, Safari, Edge)
 
-## System Requirements
+### Setup Steps
 
-### Minimum Requirements
-- **Web Server:** Apache/Nginx
-- **PHP:** 7.4+ (with PDO, PDO_MySQL extensions)
-- **Database:** MySQL 5.7+ or MariaDB 10.2+
-- **Browser:** Chrome 70+, Firefox 65+, Safari 12+, Edge 79+
-- **Storage:** 100MB disk space
-- **RAM:** 512MB minimum
+1. **Clone or download the project**
+   ```bash
+   cd /path/to/your/projects
+   ```
 
-### Recommended Requirements
-- **PHP:** 8.0+
-- **MySQL:** 8.0+
-- **RAM:** 1GB+
-- **SSL Certificate:** For production deployment
+2. **Database is already configured**
+   - Database: `personal_finance`
+   - User: `pfm_user`
+   - Password: `Pfm@2025Pass`
+   - All tables created and ready
+
+3. **Start the PHP server**
+   ```bash
+   php -S localhost:8000
+   ```
+
+4. **Access the application**
+   ```
+   http://localhost:8000/
+   ```
+
+5. **Register your account**
+   - Click "Login / Register"
+   - Fill in your details
+   - Start tracking expenses!
 
 ## Project Structure
+
 ```
 personal-finance-system/
-├── assets/                 # Static assets (CSS, JS)
-├── auth/                   # Authentication scripts
-├── config/                 # Configuration files
-├── database/               # Database schema and migrations
-├── documentation/          # Technical and user documentation
-├── includes/               # Shared PHP includes
-├── logs/                   # Application logs
-├── uploads/                # File uploads directory
-├── *.php                   # Main application pages
-├── install.php             # Installation wizard
-└── README.md              # This file
+├── frontend/              # HTML pages
+│   ├── login.php         # Login/Register page
+│   ├── dashboard.html    # Main dashboard
+│   ├── expenses.html     # Expense management
+│   ├── budgets.php       # Budget management
+│   ├── reports.html      # Reports and analytics
+│   ├── categories.php    # Category management
+│   └── profile.html      # User profile
+├── backend/              # PHP backend
+│   ├── auth/            # Authentication
+│   ├── api/             # JSON APIs
+│   ├── expenses/        # Expense operations
+│   ├── budgets/         # Budget operations
+│   ├── categories/      # Category operations
+│   └── config/          # Database configuration
+├── assets/              # Static files
+│   ├── css/            # Stylesheets
+│   └── js/             # JavaScript files
+├── database/           # Database files
+│   ├── schema.sql      # Database structure
+│   └── demo_data.sql   # Sample data (optional)
+├── documentation/      # Project documentation
+│   ├── USER_MANUAL.md
+│   └── TECHNICAL_DOCUMENTATION.md
+└── index.html         # Landing page
 ```
 
-## Key Features Explained
+## Usage
 
-### Dashboard
-- Monthly expense overview
-- Budget vs. actual spending comparison
-- Recent transactions list
-- Category-wise spending breakdown
-- Visual progress indicators
+### Register/Login
+1. Navigate to `http://localhost:8000/`
+2. Click "Login / Register"
+3. Create your account or login
 
-### Expense Management
-- Quick expense entry form
-- Categorized expense tracking
-- Date-based filtering
-- Bulk operations support
-- Expense history with pagination
+### Add Expenses
+1. Go to "Expenses" page
+2. Fill in amount, description, date, and category
+3. Click "Add Expense"
 
-### Budget Management
-- Monthly budget setting
-- Visual progress tracking
-- Over-budget alerts
-- Historical budget comparison
-- Budget vs. actual analysis
+### Set Budget
+1. Go to "Budgets" page
+2. Enter budget amount and select month/year
+3. Click "Set Budget"
 
-### Reports & Analytics
-- Interactive pie charts for category breakdown
-- Line charts for spending trends
-- Monthly and weekly report views
-- Detailed statistical summaries
-- Exportable data tables
+### View Reports
+1. Go to "Reports" page
+2. Select period (monthly/weekly)
+3. View charts and statistics
 
-### Data Export
-- CSV format export
-- Complete transaction history
-- Summary statistics included
-- Excel-compatible format
+### Export Data
+1. Go to "Expenses" page
+2. Click "Export CSV"
+3. File downloads automatically
+
+## Database Configuration
+
+Current configuration in `backend/config/database.php`:
+- Host: `localhost`
+- Database: `personal_finance`
+- Username: `pfm_user`
+- Password: `Pfm@2025Pass`
+
+To change credentials, edit `backend/config/database.php`
 
 ## Security Features
+
 - Password hashing using PHP's `password_hash()`
 - SQL injection prevention with prepared statements
 - XSS protection with output escaping
 - Session-based authentication
 - Input validation and sanitization
-- Error logging and monitoring
 
-## Development Methodology
-This project follows the Agile development methodology with:
-- Iterative development cycles
-- User feedback integration
-- Continuous testing and refinement
-- Modular code architecture
-- Version control with Git
+## API Endpoints
 
-## Academic Context
-This system was developed as part of the BSD 3106 coursework focusing on:
-- Software requirement specification (SRS)
-- System design specifications (SDS)
-- Database design and implementation
-- User interface design
-- Testing and deployment strategies
-- Technical documentation
+- `GET /backend/api/dashboard.php` - Dashboard data
+- `GET /backend/api/expenses.php` - List expenses
+- `GET /backend/api/categories.php` - List categories
+- `GET /backend/api/budgets.php` - List budgets
+- `POST /backend/auth/login.php` - User login
+- `POST /backend/auth/register.php` - User registration
+- `POST /backend/expenses/add.php` - Add expense
+- `POST /backend/expenses/delete.php` - Delete expense
 
-## Documentation
-- **User Manual:** `documentation/USER_MANUAL.md`
-- **Technical Documentation:** `documentation/TECHNICAL_DOCUMENTATION.md`
-- **Database Schema:** `database/schema.sql`
-- **Installation Guide:** Built-in installation wizard
+## Troubleshooting
 
-## Testing
-The system has been tested for:
-- Functionality across all modules
-- Cross-browser compatibility
-- Responsive design on various devices
-- Data integrity and security
-- Performance under normal load
+### Can't connect to database
+- Check MySQL is running: `sudo systemctl status mysql`
+- Verify credentials in `backend/config/database.php`
+
+### Registration not working
+- Ensure database is set up correctly
+- Check PHP error logs
+
+### Pages not loading
+- Make sure PHP server is running
+- Check the correct port (8000)
 
 ## Future Enhancements
-- Mobile application development
-- API for third-party integrations
-- Advanced reporting features
-- Multi-currency support
-- Automated backup systems
-- Email notification system
-- Recurring expense tracking
-- Financial goal setting
 
-## Support & Maintenance
-- Regular security updates
-- Bug fixes and improvements
-- Feature enhancements based on user feedback
-- Documentation updates
-- Performance optimizations
+- Mobile application
+- Recurring expenses
+- Multiple currency support
+- Budget alerts via email
+- Data visualization improvements
+- Export to PDF
+- Multi-user support with roles
 
 ## License
-This project is developed for academic purposes as part of the BSD 3106 coursework.
 
-## Contact Information
-- **Developer:** Edgah Kipkemoi
-- **Registration:** 22/06846
-- **Course:** BSD 3106 - Bachelor of Software Development
-- **Supervisor:** Griffin Kenga
-- **Institution:** [Your Institution Name]
+This project is developed for academic purposes as part of BSD 3106 coursework.
 
-## Acknowledgments
-- Supervisor Griffin Kenga for guidance and support
-- Course instructors for technical knowledge
-- Fellow students for feedback and testing
-- Open source community for tools and libraries used
+## Contact
+
+**Developer:** Edgah Kipkemoi  
+**Registration:** 22/06846  
+**Course:** BSD 3106  
+**Supervisor:** Griffin Kenga
 
 ---
 
-**Note:** This system is designed for educational purposes and demonstrates practical application of software development principles learned in the BSD 3106 course.
+**© 2025 Personal Finance Management System**

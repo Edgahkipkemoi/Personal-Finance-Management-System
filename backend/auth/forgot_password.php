@@ -3,7 +3,7 @@ session_start();
 require_once '../config/database.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: ../../frontend/login.html');
+    header('Location: ../../frontend/login.php');
     exit();
 }
 
@@ -11,7 +11,7 @@ $email = $_POST['email'] ?? '';
 
 if (empty($email)) {
     $_SESSION['error'] = 'Email is required';
-    header('Location: ../../frontend/login.html');
+    header('Location: ../../frontend/login.php');
     exit();
 }
 
@@ -55,6 +55,6 @@ try {
     $_SESSION['error'] = 'An error occurred. Please try again.';
 }
 
-header('Location: ../../frontend/login.html');
+header('Location: ../../frontend/login.php');
 exit();
 ?>

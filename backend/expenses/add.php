@@ -4,7 +4,7 @@ require_once '../config/database.php';
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
-    header('Location: ../../frontend/login.html');
+    header('Location: ../../frontend/login.php');
     exit();
 }
 

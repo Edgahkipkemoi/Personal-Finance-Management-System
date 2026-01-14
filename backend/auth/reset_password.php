@@ -6,7 +6,7 @@ $token = $_GET['token'] ?? '';
 
 if (empty($token)) {
     $_SESSION['error'] = 'Invalid reset token';
-    header('Location: ../../frontend/login.html');
+    header('Location: ../../frontend/login.php');
     exit();
 }
 
@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $delete_stmt->execute();
                 
                 $_SESSION['success'] = 'Password reset successfully! You can now login with your new password.';
-                header('Location: ../../frontend/login.html');
+                header('Location: ../../frontend/login.php');
                 exit();
             } else {
                 $_SESSION['error'] = 'Invalid or expired reset token';
@@ -74,12 +74,12 @@ try {
     
     if ($stmt->rowCount() === 0) {
         $_SESSION['error'] = 'Invalid or expired reset token';
-        header('Location: ../../frontend/login.html');
+        header('Location: ../../frontend/login.php');
         exit();
     }
 } catch (Exception $e) {
     $_SESSION['error'] = 'An error occurred. Please try again.';
-    header('Location: ../../frontend/login.html');
+    header('Location: ../../frontend/login.php');
     exit();
 }
 ?>
@@ -118,7 +118,7 @@ try {
                         </form>
                         
                         <div class="text-center mt-3">
-                            <a href="../../frontend/login.html" class="text-decoration-none">Back to Login</a>
+                            <a href="../../frontend/login.php" class="text-decoration-none">Back to Login</a>
                         </div>
                     </div>
                 </div>
