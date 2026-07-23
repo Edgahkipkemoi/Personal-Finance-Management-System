@@ -232,15 +232,8 @@ function getFromLocalStorage(key) {
     }
 }
 
-// Service worker registration for PWA functionality (future enhancement)
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js')
-            .then(function(registration) {
-                console.log('SW registered: ', registration);
-            })
-            .catch(function(registrationError) {
-                console.log('SW registration failed: ', registrationError);
-            });
-    });
+// Format date to a readable string
+function formatDate(dateStr) {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-KE', { year: 'numeric', month: 'short', day: 'numeric' });
 }
