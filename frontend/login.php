@@ -16,6 +16,26 @@
     </style>
 </head>
 <body>
+    <?php
+    // Hardened session settings before session_start
+    ini_set('session.cookie_httponly', '1');
+    ini_set('session.cookie_samesite', 'Lax');
+    // Uncomment on HTTPS: ini_set('session.cookie_secure', '1');
+
+    session_start();
+
+    // Redirect already-authenticated users straight to dashboard
+    if (isset($_SESSION['user_id'])) {
+        header('Location: dashboard.html');
+        exit();
+    }
+
+    // Generate a CSRF token for this page load
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    $csrf_token = $_SESSION['csrf_token'];
+    ?>
     <div class="container">
         <div class="row justify-content-center mt-5 mb-5">
             <div class="col-md-5">
@@ -26,9 +46,8 @@
                         <p class="mb-0 mt-1" style="opacity:0.85; font-size:0.875rem;">Track expenses, manage budgets, reach your goals</p>
                     </div>
                     <div class="card-body p-4">
-                        
+
                         <?php
-                        session_start();
                         if (isset($_SESSION['error'])) {
                             echo '<div class="alert alert-danger">' . htmlspecialchars($_SESSION['error']) . '</div>';
                             unset($_SESSION['error']);
@@ -37,8 +56,17 @@
                             echo '<div class="alert alert-success">' . htmlspecialchars($_SESSION['success']) . '</div>';
                             unset($_SESSION['success']);
                         }
+                        // Render the demo reset link as real HTML (token is hex-safe, no escaping issue)
+                        if (isset($_SESSION['demo_reset_token'])) {
+                            $token = $_SESSION['demo_reset_token'];
+                            unset($_SESSION['demo_reset_token']);
+                            echo '<div class="alert alert-info">';
+                            echo '<strong>Demo Reset Link:</strong> ';
+                            echo '<a href="../backend/auth/reset_password.php?token=' . htmlspecialchars($token) . '">Click here to reset your password</a>';
+                            echo '</div>';
+                        }
                         ?>
-                        
+
                         <ul class="nav nav-tabs mb-3" role="tablist">
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#login">Login</button>
@@ -47,11 +75,12 @@
                                 <button class="nav-link" data-bs-toggle="tab" data-bs-target="#register">Register</button>
                             </li>
                         </ul>
-                        
+
                         <div class="tab-content">
                             <!-- Login Form -->
                             <div class="tab-pane fade show active" id="login">
                                 <form action="../backend/auth/login.php" method="POST">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                                     <div class="mb-3">
                                         <label class="form-label">Email</label>
                                         <input type="email" name="email" class="form-control" required>
@@ -66,10 +95,11 @@
                                     </div>
                                 </form>
                             </div>
-                            
+
                             <!-- Register Form -->
                             <div class="tab-pane fade" id="register">
                                 <form action="../backend/auth/register.php" method="POST">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                                     <div class="mb-3">
                                         <label class="form-label">Full Name</label>
                                         <input type="text" name="name" class="form-control" required>
@@ -105,6 +135,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <form action="../backend/auth/forgot_password.php" method="POST">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="form-label">Email Address</label>
@@ -120,7 +151,7 @@
             </div>
         </div>
     </div>
-    
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

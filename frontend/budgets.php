@@ -21,7 +21,7 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item"><a class="nav-link text-white" href="dashboard.html"><i class="fas fa-home me-1"></i>Dashboard</a></li>
-                    <li class="nav-item"><a class="nav-link text-white" href="expenses.html"><i class="fas fa-receipt me-1"></i>Expenses</a></li>
+                    <li class="nav-item"><a class="nav-link text-white" href="expenses.php"><i class="fas fa-receipt me-1"></i>Expenses</a></li>
                     <li class="nav-item"><a class="nav-link text-white fw-semibold active" href="budgets.php"><i class="fas fa-chart-pie me-1"></i>Budgets</a></li>
                     <li class="nav-item"><a class="nav-link text-white" href="goals.html"><i class="fas fa-bullseye me-1"></i>Goals</a></li>
                     <li class="nav-item"><a class="nav-link text-white" href="reports.html"><i class="fas fa-chart-line me-1"></i>Reports</a></li>
@@ -45,7 +45,21 @@
     
     <div class="container mt-4">
         <?php
+        ini_set('session.cookie_httponly', '1');
+        ini_set('session.cookie_samesite', 'Lax');
         session_start();
+
+        // Server-side auth guard
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: login.php');
+            exit();
+        }
+
+        if (empty($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        }
+        $csrf_token = $_SESSION['csrf_token'];
+
         if (isset($_SESSION['error'])) {
             echo '<div class="alert alert-danger">' . htmlspecialchars($_SESSION['error']) . '</div>';
             unset($_SESSION['error']);
@@ -65,6 +79,7 @@
                     </div>
                     <div class="card-body">
                         <form action="../backend/budgets/set.php" method="POST">
+                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                             <div class="mb-3">
                                 <label class="form-label">Budget Amount (KSh)</label>
                                 <input type="number" name="amount" step="0.01" class="form-control" required>

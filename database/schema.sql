@@ -58,6 +58,32 @@ CREATE TABLE password_resets (
     UNIQUE KEY unique_user (user_id)
 );
 
+-- Savings goals table
+CREATE TABLE savings_goals (
+    goal_id       INT AUTO_INCREMENT PRIMARY KEY,
+    goal_name     VARCHAR(100) NOT NULL,
+    target_amount DECIMAL(10,2) NOT NULL,
+    current_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    deadline      DATE NOT NULL,
+    description   TEXT,
+    user_id       INT NOT NULL,
+    created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+-- Goal contributions table
+CREATE TABLE goal_contributions (
+    contribution_id   INT AUTO_INCREMENT PRIMARY KEY,
+    goal_id           INT NOT NULL,
+    amount            DECIMAL(10,2) NOT NULL,
+    contribution_date DATE NOT NULL,
+    description       TEXT,
+    user_id           INT NOT NULL,
+    created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (goal_id)  REFERENCES savings_goals(goal_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id)  REFERENCES users(user_id) ON DELETE CASCADE
+);
+
 -- Insert default categories
 INSERT INTO categories (category_name, user_id) VALUES 
 ('Food & Dining', NULL),

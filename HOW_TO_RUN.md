@@ -21,8 +21,8 @@ That's it! 🎉
 ## 📋 What's Already Configured
 
 ✅ **Database:** MySQL database `personal_finance` is created  
-✅ **Tables:** All tables (users, expenses, budgets, categories) exist  
-✅ **User:** Database user `pfm_user` with password `Pfm@2025Pass`  
+✅ **Tables:** All tables (users, expenses, budgets, categories, savings_goals, goal_contributions) exist  
+✅ **User:** Database user `pfm_user` — credentials stored in `.env` (never committed)  
 ✅ **Connection:** PHP is configured to connect to MySQL  
 ✅ **Export:** CSV export functionality is working  
 

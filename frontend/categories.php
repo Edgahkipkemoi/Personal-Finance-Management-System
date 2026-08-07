@@ -21,7 +21,7 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item"><a class="nav-link text-white" href="dashboard.html"><i class="fas fa-home me-1"></i>Dashboard</a></li>
-                    <li class="nav-item"><a class="nav-link text-white" href="expenses.html"><i class="fas fa-receipt me-1"></i>Expenses</a></li>
+                    <li class="nav-item"><a class="nav-link text-white" href="expenses.php"><i class="fas fa-receipt me-1"></i>Expenses</a></li>
                     <li class="nav-item"><a class="nav-link text-white" href="budgets.php"><i class="fas fa-chart-pie me-1"></i>Budgets</a></li>
                     <li class="nav-item"><a class="nav-link text-white" href="goals.html"><i class="fas fa-bullseye me-1"></i>Goals</a></li>
                     <li class="nav-item"><a class="nav-link text-white" href="reports.html"><i class="fas fa-chart-line me-1"></i>Reports</a></li>
@@ -45,7 +45,21 @@
     
     <div class="container mt-4">
         <?php
+        ini_set('session.cookie_httponly', '1');
+        ini_set('session.cookie_samesite', 'Lax');
         session_start();
+
+        // Server-side auth guard
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: login.php');
+            exit();
+        }
+
+        if (empty($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        }
+        $csrf_token = $_SESSION['csrf_token'];
+
         if (isset($_SESSION['error'])) {
             echo '<div class="alert alert-danger">' . htmlspecialchars($_SESSION['error']) . '</div>';
             unset($_SESSION['error']);
@@ -65,6 +79,7 @@
                     </div>
                     <div class="card-body">
                         <form action="../backend/categories/add.php" method="POST">
+                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                             <div class="mb-3">
                                 <label class="form-label">Category Name</label>
                                 <input type="text" name="category_name" class="form-control" placeholder="Enter category name" required>
@@ -112,6 +127,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        const CSRF_TOKEN = <?php echo json_encode($csrf_token); ?>;
+
         async function loadUserInfo() {
             try {
                 const response = await fetch('../backend/api/user.php');
@@ -163,6 +180,7 @@
                         <td><span class="badge bg-primary">${category.name}</span></td>
                         <td>
                             <form method="POST" action="../backend/categories/delete.php" style="display: inline;">
+                                <input type="hidden" name="csrf_token" value="${CSRF_TOKEN}">
                                 <input type="hidden" name="category_id" value="${category.id}">
                                 <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this category?')">
                                     <i class="fas fa-trash"></i> Delete

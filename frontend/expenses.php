@@ -1,4 +1,20 @@
 <!DOCTYPE html>
+<?php
+ini_set('session.cookie_httponly', '1');
+ini_set('session.cookie_samesite', 'Lax');
+session_start();
+
+// Server-side auth guard
+if (!isset($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit();
+}
+
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+$csrf_token = $_SESSION['csrf_token'];
+?>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -53,6 +69,7 @@
                     </div>
                     <div class="card-body">
                         <form action="../backend/expenses/add.php" method="POST">
+                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                             <div class="mb-3">
                                 <label class="form-label">Amount (KSh)</label>
                                 <input type="number" name="amount" step="0.01" class="form-control" required>
@@ -106,6 +123,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        const CSRF_TOKEN = <?php echo json_encode($csrf_token); ?>;
+
         // Load categories and expenses
         async function loadPageData() {
             await loadUserInfo();
@@ -183,6 +202,7 @@
                         <td><strong>KSh ${expense.amount}</strong></td>
                         <td>
                             <form method="POST" action="../backend/expenses/delete.php" style="display: inline;">
+                                <input type="hidden" name="csrf_token" value="${CSRF_TOKEN}">
                                 <input type="hidden" name="expense_id" value="${expense.id}">
                                 <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete this expense?')">
                                     <i class="fas fa-trash"></i>

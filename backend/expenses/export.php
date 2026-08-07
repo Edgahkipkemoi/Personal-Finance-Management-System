@@ -60,7 +60,7 @@ try {
     
 } catch (Exception $e) {
     $_SESSION['error'] = 'Failed to export data: ' . $e->getMessage();
-    header('Location: ../../frontend/expenses.html');
+    header('Location: ../../frontend/expenses.php');
     exit();
 }
 ?>

@@ -21,9 +21,9 @@ try {
                              COALESCE(SUM(e.amount), 0) as spent,
                              (b.amount - COALESCE(SUM(e.amount), 0)) as remaining
                       FROM budgets b
-                      LEFT JOIN expenses e ON e.user_id = b.user_id 
-                      AND strftime('%m', e.expense_date) = printf('%02d', b.month)
-                      AND strftime('%Y', e.expense_date) = CAST(b.year AS TEXT)
+                      LEFT JOIN expenses e ON e.user_id = b.user_id
+                      AND MONTH(e.expense_date) = b.month
+                      AND YEAR(e.expense_date)  = b.year
                       WHERE b.user_id = :user_id
                       GROUP BY b.budget_id, b.amount, b.month, b.year
                       ORDER BY b.year DESC, b.month DESC";

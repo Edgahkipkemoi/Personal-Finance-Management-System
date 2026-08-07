@@ -21,14 +21,14 @@ try {
     $month = $_GET['month'] ?? date('m');
     $year = $_GET['year'] ?? date('Y');
     
-    // Build date filter
+    // Build date filter (MySQL syntax)
     if ($period === 'weekly') {
         $week = $_GET['week'] ?? date('W');
-        $date_filter = "strftime('%W', expense_date) = :week AND strftime('%Y', expense_date) = :year";
-        $bind_params = [':week' => $week, ':year' => $year, ':user_id' => $user_id];
+        $date_filter = "WEEK(expense_date, 1) = :week AND YEAR(expense_date) = :year";
+        $bind_params = [':week' => (int)$week, ':year' => (int)$year, ':user_id' => $user_id];
     } else {
-        $date_filter = "strftime('%m', expense_date) = :month AND strftime('%Y', expense_date) = :year";
-        $bind_params = [':month' => sprintf('%02d', $month), ':year' => $year, ':user_id' => $user_id];
+        $date_filter = "MONTH(expense_date) = :month AND YEAR(expense_date) = :year";
+        $bind_params = [':month' => (int)$month, ':year' => (int)$year, ':user_id' => $user_id];
     }
     
     // Get summary statistics

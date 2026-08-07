@@ -2,7 +2,6 @@
 session_start();
 require_once '../config/database.php';
 
-// Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../../frontend/login.php');
     exit();
@@ -13,11 +12,17 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit();
 }
 
-$amount = $_POST['amount'] ?? '';
-$month = $_POST['month'] ?? '';
-$year = $_POST['year'] ?? '';
+// Verify CSRF token
+if (empty($_POST['csrf_token']) || $_POST['csrf_token'] !== ($_SESSION['csrf_token'] ?? '')) {
+    $_SESSION['error'] = 'Invalid request. Please try again.';
+    header('Location: ../../frontend/budgets.php');
+    exit();
+}
 
-// Validate input
+$amount = $_POST['amount'] ?? '';
+$month  = $_POST['month']  ?? '';
+$year   = $_POST['year']   ?? '';
+
 if (empty($amount) || empty($month) || empty($year)) {
     $_SESSION['error'] = 'All fields are required';
     header('Location: ../../frontend/budgets.php');
@@ -44,36 +49,26 @@ if (!is_numeric($year) || $year < 2020 || $year > 2030) {
 
 try {
     $database = new Database();
-    $db = $database->connect();
-    $user_id = $_SESSION['user_id'];
-    
-    // Insert or update budget (SQLite doesn't support ON DUPLICATE KEY UPDATE)
-    // First, try to update existing budget
-    $update_query = "UPDATE budgets SET amount = :amount WHERE user_id = :user_id AND month = :month AND year = :year";
-    $update_stmt = $db->prepare($update_query);
-    $update_stmt->bindParam(':amount', $amount);
-    $update_stmt->bindParam(':user_id', $user_id);
-    $update_stmt->bindParam(':month', $month);
-    $update_stmt->bindParam(':year', $year);
-    $update_stmt->execute();
-    
-    // If no rows were affected, insert new budget
-    if ($update_stmt->rowCount() === 0) {
-        $insert_query = "INSERT INTO budgets (amount, month, year, user_id) VALUES (:amount, :month, :year, :user_id)";
-        $insert_stmt = $db->prepare($insert_query);
-        $insert_stmt->bindParam(':amount', $amount);
-        $insert_stmt->bindParam(':month', $month);
-        $insert_stmt->bindParam(':year', $year);
-        $insert_stmt->bindParam(':user_id', $user_id);
-        $insert_stmt->execute();
-    }
-    
+    $db       = $database->connect();
+    $user_id  = $_SESSION['user_id'];
+
+    // Use INSERT … ON DUPLICATE KEY UPDATE (MySQL) so one round-trip handles both cases
+    $query = "INSERT INTO budgets (amount, month, year, user_id)
+              VALUES (:amount, :month, :year, :user_id)
+              ON DUPLICATE KEY UPDATE amount = :amount";
+    $stmt  = $db->prepare($query);
+    $stmt->bindParam(':amount',  $amount);
+    $stmt->bindParam(':month',   $month);
+    $stmt->bindParam(':year',    $year);
+    $stmt->bindParam(':user_id', $user_id);
+    $stmt->execute();
+
     $_SESSION['success'] = 'Budget set successfully!';
-    
+
 } catch (Exception $e) {
-    $_SESSION['error'] = 'Database error: ' . $e->getMessage();
+    error_log('Set budget error: ' . $e->getMessage());
+    $_SESSION['error'] = 'An error occurred. Please try again.';
 }
 
 header('Location: ../../frontend/budgets.php');
 exit();
-?>
