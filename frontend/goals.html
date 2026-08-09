@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Savings Goals - Personal Finance Manager</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="../assets/css/style.css" rel="stylesheet">
 </head>
 <body>
@@ -25,6 +25,7 @@
                     <li class="nav-item"><a class="nav-link text-white" href="budgets.php"><i class="fas fa-chart-pie me-1"></i>Budgets</a></li>
                     <li class="nav-item"><a class="nav-link text-white fw-semibold active" href="goals.html"><i class="fas fa-bullseye me-1"></i>Goals</a></li>
                     <li class="nav-item"><a class="nav-link text-white" href="reports.html"><i class="fas fa-chart-line me-1"></i>Reports</a></li>
+                    <li class="nav-item"><a class="nav-link text-white" href="mpesa.html"><i class="fas fa-mobile-alt me-1"></i>M-Pesa</a></li>
                     <li class="nav-item"><a class="nav-link text-white" href="categories.php"><i class="fas fa-tags me-1"></i>Categories</a></li>
                 </ul>
                 <ul class="navbar-nav">
@@ -98,7 +99,7 @@
                                 <h3 class="mb-0">KSh <span class="counter" data-target="0">0</span></h3>
                             </div>
                             <div class="align-self-center">
-                                <i class="fas fa-target fa-2x opacity-75"></i>
+                                <i class="fas fa-flag fa-2x opacity-75"></i>
                             </div>
                         </div>
                     </div>
@@ -298,13 +299,6 @@
             
             cards[3].textContent = summary.urgent_goals || 0;
             cards[3].setAttribute('data-target', summary.urgent_goals || 0);
-            
-            // Animate counters
-            cards.forEach(counter => {
-                if (window.PFM && window.PFM.animateCounter) {
-                    window.PFM.animateCounter(counter);
-                }
-            });
         }
 
         function displayGoals() {
@@ -568,19 +562,27 @@
         }
 
         function showSuccess(message) {
-            if (window.PFM && window.PFM.showNotification) {
-                window.PFM.showNotification(message, 'success');
-            } else {
-                alert(message);
-            }
+            showToast(message, 'success');
         }
 
         function showError(message) {
-            if (window.PFM && window.PFM.showNotification) {
-                window.PFM.showNotification(message, 'error');
-            } else {
-                alert('Error: ' + message);
-            }
+            showToast('Error: ' + message, 'danger');
+        }
+
+        function showToast(message, type) {
+            const toastId = 'toast-' + Date.now();
+            const html = `
+                <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0 position-fixed top-0 end-0 m-3" role="alert" style="z-index:9999">
+                    <div class="d-flex">
+                        <div class="toast-body">${message}</div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>`;
+            document.body.insertAdjacentHTML('beforeend', html);
+            const toastEl = document.getElementById(toastId);
+            const toast = new bootstrap.Toast(toastEl, { delay: 4000 });
+            toast.show();
+            toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
         }
 
         async function loadUserInfo() {

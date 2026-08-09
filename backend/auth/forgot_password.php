@@ -30,22 +30,19 @@ try {
         
         // Generate reset token
         $reset_token = bin2hex(random_bytes(32));
-        $expires_at = date('Y-m-d H:i:s', strtotime('+1 hour'));
+        $expires_at = date('Y-m-d H:i:s', time() + 3600);
         
-        // Store reset token in database
-        $token_query = "INSERT INTO password_resets (user_id, token, expires_at) VALUES (:user_id, :token, :expires_at)
-                        ON DUPLICATE KEY UPDATE token = :token, expires_at = :expires_at";
+        // Store reset token — use positional params to avoid PDO duplicate-name bug
+        $token_query = "INSERT INTO password_resets (user_id, token, expires_at) VALUES (?, ?, ?)
+                        ON DUPLICATE KEY UPDATE token = ?, expires_at = ?";
         $token_stmt = $db->prepare($token_query);
-        $token_stmt->bindParam(':user_id', $user['user_id']);
-        $token_stmt->bindParam(':token', $reset_token);
-        $token_stmt->bindParam(':expires_at', $expires_at);
-        $token_stmt->execute();
+        $token_stmt->execute([$user['user_id'], $reset_token, $expires_at, $reset_token, $expires_at]);
         
-        // In a real application, you would send an email here
-        // For demo purposes, we'll just show the reset link
-        $_SESSION['success'] = 'Password reset instructions have been sent to your email. 
-                               <br><strong>Demo Reset Link:</strong> 
-                               <a href="reset_password.php?token=' . $reset_token . '">Click here to reset password</a>';
+        // In production, send the reset link by email.
+        // For this demo the link is stored in session so it can be shown on the login page.
+        $reset_url = '../../backend/auth/reset_password.php?token=' . $reset_token;
+        $_SESSION['reset_link'] = $reset_url;
+        $_SESSION['success'] = 'Password reset link generated. See the demo link below.';
     } else {
         // Don't reveal if email exists or not for security
         $_SESSION['success'] = 'If an account with that email exists, password reset instructions have been sent.';

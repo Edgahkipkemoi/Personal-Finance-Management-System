@@ -36,7 +36,8 @@ if (!is_numeric($month) || $month < 1 || $month > 12) {
     exit();
 }
 
-if (!is_numeric($year) || $year < 2020 || $year > 2030) {
+$current_year = (int)date('Y');
+if (!is_numeric($year) || $year < 2020 || $year > ($current_year + 5)) {
     $_SESSION['error'] = 'Invalid year selected';
     header('Location: ../../frontend/budgets.php');
     exit();
@@ -47,8 +48,7 @@ try {
     $db = $database->connect();
     $user_id = $_SESSION['user_id'];
     
-    // Insert or update budget (SQLite doesn't support ON DUPLICATE KEY UPDATE)
-    // First, try to update existing budget
+    // Upsert budget: try update first, insert if no existing row
     $update_query = "UPDATE budgets SET amount = :amount WHERE user_id = :user_id AND month = :month AND year = :year";
     $update_stmt = $db->prepare($update_query);
     $update_stmt->bindParam(':amount', $amount);

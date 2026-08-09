@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 120">
+  <rect width="300" height="120" rx="10" fill="#00a651"/>
+  <!-- M -->
+  <text x="18" y="90" font-family="Arial Black,Arial" font-weight="900" font-size="82" fill="white" letter-spacing="-2">M-PESA</text>
+  <!-- phone icon in the O gap feel — small red arrow accent -->
+  <polygon points="108,42 122,55 108,68" fill="#e30613"/>
+</svg>

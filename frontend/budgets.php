@@ -1,3 +1,6 @@
+<?php
+session_start();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -25,6 +28,7 @@
                     <li class="nav-item"><a class="nav-link text-white fw-semibold active" href="budgets.php"><i class="fas fa-chart-pie me-1"></i>Budgets</a></li>
                     <li class="nav-item"><a class="nav-link text-white" href="goals.html"><i class="fas fa-bullseye me-1"></i>Goals</a></li>
                     <li class="nav-item"><a class="nav-link text-white" href="reports.html"><i class="fas fa-chart-line me-1"></i>Reports</a></li>
+                    <li class="nav-item"><a class="nav-link text-white" href="mpesa.html"><i class="fas fa-mobile-alt me-1"></i>M-Pesa</a></li>
                     <li class="nav-item"><a class="nav-link text-white" href="categories.php"><i class="fas fa-tags me-1"></i>Categories</a></li>
                 </ul>
                 <ul class="navbar-nav">
@@ -45,7 +49,6 @@
     
     <div class="container mt-4">
         <?php
-        session_start();
         if (isset($_SESSION['error'])) {
             echo '<div class="alert alert-danger">' . htmlspecialchars($_SESSION['error']) . '</div>';
             unset($_SESSION['error']);
@@ -89,9 +92,13 @@
                             <div class="mb-3">
                                 <label class="form-label">Year</label>
                                 <select name="year" class="form-control" required>
-                                    <option value="2024">2024</option>
-                                    <option value="2025">2025</option>
-                                    <option value="2026">2026</option>
+                                    <?php
+                                    $cy = (int)date('Y');
+                                    for ($y = $cy - 2; $y <= $cy + 3; $y++) {
+                                        $sel = ($y === $cy) ? ' selected' : '';
+                                        echo "<option value=\"$y\"$sel>$y</option>";
+                                    }
+                                    ?>
                                 </select>
                             </div>
                             <button type="submit" class="btn btn-primary w-100">Set Budget</button>
@@ -131,7 +138,7 @@
                     return;
                 }
                 
-                document.getElementById('user-dropdown').textContent = data.user_name;
+                document.getElementById('user-dropdown').innerHTML = `<i class="fas fa-user-circle me-1"></i>${data.user_name}`;
             } catch (error) {
                 console.error('Error loading user info:', error);
             }
@@ -178,17 +185,16 @@
                                         <span>Budget: KSh ${budget.amount}</span>
                                         <span>Spent: KSh ${budget.spent}</span>
                                     </div>
-                                    <div class="progress mb-2">
-                                        <div class="progress-bar ${statusClass}" style="width: ${Math.min(budget.percentage, 100)}%">
-                                            ${budget.percentage}%
-                                        </div>
+                                    <div class="progress mb-1">
+                                        <div class="progress-bar ${statusClass}" style="width: ${Math.min(budget.percentage, 100)}%" 
+                                             role="progressbar" aria-valuenow="${budget.percentage}" aria-valuemin="0" aria-valuemax="100"></div>
                                     </div>
-                                    <small class="text-muted">
-                                        Remaining: KSh ${budget.remaining}
-                                        ${parseFloat(budget.remaining) < 0 ? 
-                                            `<span class="text-danger">(Over budget by KSh ${Math.abs(parseFloat(budget.remaining)).toFixed(2)})</span>` : 
-                                            ''}
-                                    </small>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <small class="text-muted">${budget.percentage}% used</small>
+                                        <small class="text-muted">Remaining: KSh ${budget.remaining}${parseFloat(budget.remaining) < 0 ? 
+                                            ` <span class="text-danger">(Over by KSh ${Math.abs(parseFloat(budget.remaining)).toFixed(2)})</span>` : 
+                                            ''}</small>
+                                    </div>
                                 </div>
                             </div>
                         </div>

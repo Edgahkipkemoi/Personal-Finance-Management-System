@@ -36,10 +36,10 @@ try {
             header('Location: ../../frontend/dashboard.html');
             exit();
         } else {
-            $_SESSION['error'] = 'Invalid password';
+            $_SESSION['error'] = 'Invalid email or password';
         }
     } else {
-        $_SESSION['error'] = 'User not found';
+        $_SESSION['error'] = 'Invalid email or password';
     }
     
 } catch (Exception $e) {

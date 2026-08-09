@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M-Pesa — Personal Finance Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <style>
+        .mpesa-green { background: linear-gradient(135deg,#00a651,#007a3d); }
+        .mpesa-badge { background:#00a651; }
+        .sms-textarea { font-family: monospace; font-size: 0.82rem; background:#f8f9fa; }
+        .tx-type-sent       { color:#dc3545; }
+        .tx-type-received   { color:#198754; }
+        .tx-type-paybill    { color:#0d6efd; }
+        .tx-type-till       { color:#6f42c1; }
+        .tx-type-withdrawal { color:#fd7e14; }
+        .tx-type-airtime    { color:#20c997; }
+        .status-pending     { color:#f59e0b; }
+        .status-completed   { color:#198754; }
+        .status-failed      { color:#dc3545; }
+        .status-cancelled   { color:#6c757d; }
+        .poll-spinner { display:none; }
+    </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg" style="background:linear-gradient(135deg,#667eea,#764ba2);">
+    <div class="container">
+        <a class="navbar-brand text-white fw-bold" href="dashboard.html">
+            <i class="fas fa-wallet me-2"></i>Finance Manager
+        </a>
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item"><a class="nav-link text-white" href="dashboard.html"><i class="fas fa-home me-1"></i>Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link text-white" href="expenses.html"><i class="fas fa-receipt me-1"></i>Expenses</a></li>
+                <li class="nav-item"><a class="nav-link text-white" href="budgets.php"><i class="fas fa-chart-pie me-1"></i>Budgets</a></li>
+                <li class="nav-item"><a class="nav-link text-white" href="goals.html"><i class="fas fa-bullseye me-1"></i>Goals</a></li>
+                <li class="nav-item"><a class="nav-link text-white" href="reports.html"><i class="fas fa-chart-line me-1"></i>Reports</a></li>
+                <li class="nav-item"><a class="nav-link text-white fw-semibold active" href="mpesa.html"><i class="fas fa-mobile-alt me-1"></i>M-Pesa</a></li>
+                <li class="nav-item"><a class="nav-link text-white" href="categories.php"><i class="fas fa-tags me-1"></i>Categories</a></li>
+            </ul>
+            <ul class="navbar-nav">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-white" href="#" role="button" data-bs-toggle="dropdown" id="user-dropdown">
+                        <i class="fas fa-user-circle me-1"></i>Loading...
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="profile.html"><i class="fas fa-user me-2"></i>My Profile</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="../backend/auth/logout.php"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Page Header -->
+<div class="mpesa-green text-white py-4">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="d-flex align-items-center gap-3 mb-2">
+                    <!-- M-Pesa logo — inline SVG, no external dependency -->
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 80"
+                         style="height:44px; width:auto; flex-shrink:0;" aria-label="M-Pesa">
+                        <rect width="220" height="80" rx="8" fill="#00a651"/>
+                        <text x="14" y="60" font-family="'Arial Black',Arial,sans-serif"
+                              font-weight="900" font-size="56" fill="white" letter-spacing="-1">M-PESA</text>
+                        <!-- red arrow accent between M and P -->
+                        <polygon points="72,28 86,40 72,52" fill="#e30613"/>
+                    </svg>
+                    <h2 class="mb-0 fw-bold">Integration</h2>
+                </div>
+                <p class="mb-0 opacity-75">Fund your goals, import transactions, and track M-Pesa spending automatically</p>
+            </div>
+            <div class="col-md-4 text-end d-none d-md-block">
+                <i class="fas fa-mobile-alt" style="font-size:5rem; opacity:0.2;"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mt-4">
+
+    <!-- Summary Stats -->
+    <div class="row g-3 mb-4" id="mpesa-stats">
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm" style="background:linear-gradient(135deg,#00a651,#007a3d);color:white;">
+                <div class="card-body">
+                    <p class="mb-1 opacity-75 small">M-Pesa Transactions</p>
+                    <h3 id="stat-tx-count" class="fw-bold mb-0">—</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm" style="background:linear-gradient(135deg,#dc3545,#b02a37);color:white;">
+                <div class="card-body">
+                    <p class="mb-1 opacity-75 small">Total M-Pesa Spent</p>
+                    <h3 id="stat-total" class="fw-bold mb-0">—</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm" style="background:linear-gradient(135deg,#0d6efd,#0a58ca);color:white;">
+                <div class="card-body">
+                    <p class="mb-1 opacity-75 small">STK Payments This Month</p>
+                    <h3 id="stat-payments" class="fw-bold mb-0">—</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm" style="background:linear-gradient(135deg,#6f42c1,#59359a);color:white;">
+                <div class="card-body">
+                    <p class="mb-1 opacity-75 small">Paid via STK This Month</p>
+                    <h3 id="stat-paid-month" class="fw-bold mb-0">—</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-4" id="mpesaTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-fund" type="button">
+                <i class="fas fa-paper-plane me-1"></i>Fund a Goal via STK Push
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-import" type="button">
+                <i class="fas fa-file-import me-1"></i>Import M-Pesa SMS
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-history" type="button">
+                <i class="fas fa-history me-1"></i>Transaction History
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-payments" type="button">
+                <i class="fas fa-receipt me-1"></i>STK Payment Log
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="mpesaTabContent">
+
+        <!-- TAB 1: Fund Goal via STK Push -->
+        <div class="tab-pane fade show active" id="tab-fund" role="tabpanel">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header fw-semibold" style="background:#00a651;color:white;">
+                            <i class="fas fa-paper-plane me-2"></i>Send M-Pesa STK Push
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info small">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Enter your M-Pesa number and amount. You'll receive a PIN prompt on your phone. Payment auto-records as a goal contribution and expense.
+                            </div>
+                            <form id="stkForm">
+                                <div class="mb-3">
+                                    <label class="form-label">Savings Goal <span class="text-muted">(optional)</span></label>
+                                    <select class="form-select" id="stk-goal-id" name="goal_id">
+                                        <option value="">— No specific goal (general savings) —</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">M-Pesa Phone Number <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-mobile-alt"></i></span>
+                                        <input type="text" class="form-control" id="stk-phone" placeholder="2547XXXXXXXX" maxlength="12" required>
+                                    </div>
+                                    <small class="text-muted">Format: 2547XXXXXXXX (no + or spaces)</small>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Amount (KSh) <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">KSh</span>
+                                        <input type="number" class="form-control" id="stk-amount" min="1" max="150000" step="1" placeholder="500" required>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-success w-100 fw-semibold" id="stk-btn">
+                                    <i class="fas fa-paper-plane me-2"></i>Send M-Pesa Prompt
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <!-- Payment status card -->
+                    <div class="card border-0 shadow-sm h-100" id="stk-status-card" style="display:none!important;">
+                        <div class="card-header fw-semibold bg-light">Payment Status</div>
+                        <div class="card-body text-center">
+                            <div id="stk-status-pending" class="py-4">
+                                <div class="spinner-border text-success mb-3" role="status"></div>
+                                <h5>Waiting for confirmation…</h5>
+                                <p class="text-muted small">Check your phone and enter your M-Pesa PIN</p>
+                                <p class="text-muted small poll-timer" id="poll-countdown"></p>
+                            </div>
+                            <div id="stk-status-completed" style="display:none;" class="py-4">
+                                <i class="fas fa-check-circle text-success" style="font-size:4rem;"></i>
+                                <h4 class="mt-3 text-success">Payment Successful!</h4>
+                                <p id="stk-receipt-display" class="text-muted"></p>
+                                <a href="goals.html" class="btn btn-outline-success mt-2">View Goals</a>
+                            </div>
+                            <div id="stk-status-failed" style="display:none;" class="py-4">
+                                <i class="fas fa-times-circle text-danger" style="font-size:4rem;"></i>
+                                <h4 class="mt-3 text-danger">Payment Failed</h4>
+                                <p id="stk-fail-reason" class="text-muted small"></p>
+                                <button class="btn btn-outline-danger mt-2" onclick="resetStkForm()">Try Again</button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- How it works -->
+                    <div class="card border-0 shadow-sm" id="stk-how-card">
+                        <div class="card-header bg-light fw-semibold">How It Works</div>
+                        <div class="card-body">
+                            <ol class="mb-0 ps-3">
+                                <li class="mb-2">Select a savings goal (or leave blank for general savings)</li>
+                                <li class="mb-2">Enter your Safaricom M-Pesa number</li>
+                                <li class="mb-2">Enter the amount you want to send</li>
+                                <li class="mb-2">Click <strong>Send M-Pesa Prompt</strong> — your phone will ring</li>
+                                <li class="mb-2">Enter your M-Pesa PIN on your phone</li>
+                                <li>The payment auto-records as a goal contribution and an expense</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: Import M-Pesa SMS -->
+        <div class="tab-pane fade" id="tab-import" role="tabpanel">
+            <div class="row">
+                <div class="col-md-7">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header fw-semibold bg-dark text-white">
+                            <i class="fas fa-sms me-2"></i>Paste M-Pesa SMS Messages
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-warning small mb-3">
+                                <i class="fas fa-lightbulb me-1"></i>
+                                Copy SMS messages from your M-Pesa messages folder and paste them below. Each SMS on a new line or separated by a blank line. The system auto-detects the transaction type and categorises it.
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">SMS Messages</label>
+                                <textarea class="form-control sms-textarea" id="sms-input" rows="10"
+                                    placeholder="Paste your M-Pesa SMS messages here. Example:&#10;&#10;QGH7KLMN23 confirmed. Ksh2,500.00 paid to KPLC PREPAID for account 1234567890 on 8/8/26 at 10:30 AM. New M-PESA balance is Ksh12,500.00. Transaction cost, Ksh0.00.&#10;&#10;PQR456ST78 confirmed. Ksh350.00 paid to NAIVAS SUPERMARKET. on 8/8/26 at 2:15 PM. New M-PESA balance is Ksh12,150.00."></textarea>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-secondary" onclick="parseSms(false)">
+                                    <i class="fas fa-search me-1"></i>Preview Only
+                                </button>
+                                <button class="btn btn-success" onclick="parseSms(true)">
+                                    <i class="fas fa-file-import me-1"></i>Parse &amp; Import as Expenses
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-light fw-semibold">Supported SMS Formats</div>
+                        <div class="card-body small">
+                            <p class="mb-2"><span class="badge bg-danger">SENT</span> Money sent to a person</p>
+                            <p class="mb-2"><span class="badge bg-success">RECEIVED</span> Money received (not imported as expense)</p>
+                            <p class="mb-2"><span class="badge bg-primary">PAYBILL</span> Paid to paybill (KPLC, Zuku, etc.)</p>
+                            <p class="mb-2"><span class="badge bg-purple text-white" style="background:#6f42c1;">TILL</span> Bought goods at a store</p>
+                            <p class="mb-2"><span class="badge bg-warning text-dark">WITHDRAWAL</span> ATM / Agent withdrawal</p>
+                            <p class="mb-3"><span class="badge bg-info text-dark">AIRTIME</span> Airtime purchase</p>
+                            <hr>
+                            <p class="text-muted mb-0">Duplicate M-Pesa codes are automatically skipped. Amounts are matched to your expense categories.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Parse Results -->
+            <div id="sms-results" class="mt-4" style="display:none;">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold">Parse Results</span>
+                        <span id="sms-result-summary" class="badge bg-success"></span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0" id="sms-result-table">
+                                <thead class="table-dark">
+                                    <tr><th>Code</th><th>Type</th><th>Amount</th><th>Counterparty</th><th>Date</th><th>Category</th><th>Status</th></tr>
+                                </thead>
+                                <tbody id="sms-result-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: Transaction History -->
+        <div class="tab-pane fade" id="tab-history" role="tabpanel">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <span class="fw-semibold"><i class="fas fa-history me-2"></i>Imported M-Pesa Transactions</span>
+                    <a href="expenses.html" class="btn btn-sm btn-outline-primary">View All Expenses</a>
+                </div>
+                <div class="card-body p-0" id="tx-history-container">
+                    <div class="text-center py-5 text-muted">
+                        <div class="spinner-border text-success" role="status"></div>
+                        <p class="mt-2">Loading transactions…</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: STK Payment Log -->
+        <div class="tab-pane fade" id="tab-payments" role="tabpanel">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light fw-semibold">
+                    <i class="fas fa-receipt me-2"></i>STK Push Payment History
+                </div>
+                <div class="card-body p-0" id="payment-log-container">
+                    <div class="text-center py-5 text-muted">
+                        <div class="spinner-border text-success" role="status"></div>
+                        <p class="mt-2">Loading payment history…</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /tab-content -->
+</div><!-- /container -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ── Utility ──────────────────────────────────────────────────────────────────
+function escapeHtml(s) {
+    if (!s) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function showToast(msg, type = 'success') {
+    const id   = 't' + Date.now();
+    const html = `<div id="${id}" class="toast align-items-center text-white bg-${type} border-0 position-fixed top-0 end-0 m-3" style="z-index:9999">
+        <div class="d-flex"><div class="toast-body">${escapeHtml(msg)}</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div></div>`;
+    document.body.insertAdjacentHTML('beforeend', html);
+    const el = document.getElementById(id);
+    const t  = new bootstrap.Toast(el, {delay: 5000});
+    t.show();
+    el.addEventListener('hidden.bs.toast', () => el.remove());
+}
+
+// ── Auth / user ───────────────────────────────────────────────────────────────
+async function loadUserInfo() {
+    const r    = await fetch('../backend/api/user.php');
+    const data = await r.json();
+    if (!data.authenticated) { window.location.href = 'login.php'; return; }
+    document.getElementById('user-dropdown').innerHTML =
+        `<i class="fas fa-user-circle me-1"></i>${escapeHtml(data.user_name)}`;
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+async function loadStats() {
+    try {
+        const r    = await fetch('../backend/api/mpesa.php?action=summary');
+        const data = await r.json();
+        document.getElementById('stat-tx-count').textContent  = data.tx_count ?? 0;
+        document.getElementById('stat-total').textContent     = 'KSh ' + (data.total_mpesa ?? '0.00');
+        document.getElementById('stat-payments').textContent  = data.payments_this_month ?? 0;
+        document.getElementById('stat-paid-month').textContent= 'KSh ' + (data.paid_this_month ?? '0.00');
+    } catch(e) { console.error(e); }
+}
+
+// ── Load savings goals into STK dropdown ─────────────────────────────────────
+async function loadGoals() {
+    const r    = await fetch('../backend/api/goals.php?action=list');
+    const goals = await r.json();
+    const sel   = document.getElementById('stk-goal-id');
+    goals.forEach(g => {
+        const opt = document.createElement('option');
+        opt.value = g.goal_id;
+        opt.textContent = g.goal_name + ' (KSh ' + g.remaining_amount + ' remaining)';
+        sel.appendChild(opt);
+    });
+}
+
+// ── STK Push ──────────────────────────────────────────────────────────────────
+let pollInterval = null;
+let pollSeconds  = 0;
+
+document.getElementById('stkForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const phone   = document.getElementById('stk-phone').value.trim();
+    const amount  = parseFloat(document.getElementById('stk-amount').value);
+    const goal_id = document.getElementById('stk-goal-id').value || null;
+    const btn     = document.getElementById('stk-btn');
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Sending…';
+
+    try {
+        const r    = await fetch('../backend/mpesa/stk_push.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone, amount, goal_id })
+        });
+        const data = await r.json();
+
+        if (data.success) {
+            showStkStatus('pending');
+            startPolling(data.payment_id);
+        } else {
+            showToast(data.error || 'Failed to send STK push', 'danger');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Send M-Pesa Prompt';
+        }
+    } catch(err) {
+        showToast('Network error. Please try again.', 'danger');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Send M-Pesa Prompt';
+    }
+});
+
+function showStkStatus(state) {
+    document.getElementById('stk-status-card').style.display = 'block';
+    document.getElementById('stk-how-card').style.display    = 'none';
+    document.getElementById('stk-status-pending').style.display   = state === 'pending'   ? 'block' : 'none';
+    document.getElementById('stk-status-completed').style.display = state === 'completed' ? 'block' : 'none';
+    document.getElementById('stk-status-failed').style.display    = state === 'failed'    ? 'block' : 'none';
+}
+
+function startPolling(paymentId) {
+    pollSeconds = 60;
+    document.getElementById('poll-countdown').textContent = 'Checking in ' + pollSeconds + 's…';
+    pollInterval = setInterval(async () => {
+        pollSeconds--;
+        document.getElementById('poll-countdown').textContent =
+            pollSeconds > 0 ? 'Auto-checking in ' + pollSeconds + 's…' : 'Checking…';
+        if (pollSeconds <= 0 || pollSeconds % 5 === 0) {
+            const r    = await fetch('../backend/mpesa/payment_status.php?payment_id=' + paymentId);
+            const data = await r.json();
+            if (data.status === 'completed') {
+                clearInterval(pollInterval);
+                document.getElementById('stk-receipt-display').textContent =
+                    'Receipt: ' + (data.receipt || 'N/A') + ' — KSh ' + data.amount;
+                showStkStatus('completed');
+                loadStats();
+            } else if (data.status === 'failed' || data.status === 'cancelled') {
+                clearInterval(pollInterval);
+                document.getElementById('stk-fail-reason').textContent =
+                    data.description || 'Transaction was not completed.';
+                showStkStatus('failed');
+            }
+        }
+        if (pollSeconds <= 0) clearInterval(pollInterval);
+    }, 1000);
+}
+
+function resetStkForm() {
+    clearInterval(pollInterval);
+    document.getElementById('stkForm').reset();
+    document.getElementById('stk-status-card').style.display = 'none';
+    document.getElementById('stk-how-card').style.display    = 'block';
+    const btn = document.getElementById('stk-btn');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Send M-Pesa Prompt';
+}
+
+// ── SMS Parser ────────────────────────────────────────────────────────────────
+async function parseSms(doImport) {
+    const raw = document.getElementById('sms-input').value.trim();
+    if (!raw) { showToast('Please paste at least one SMS message', 'warning'); return; }
+
+    const messages = raw.split(/\n{2,}|\r\n{2,}/).map(s => s.trim()).filter(Boolean);
+
+    try {
+        const r    = await fetch('../backend/mpesa/parse_sms.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messages, import: doImport })
+        });
+        const data = await r.json();
+        renderSmsResults(data, doImport);
+        if (doImport && data.imported > 0) {
+            showToast(data.imported + ' transaction(s) imported as expenses!', 'success');
+            loadStats();
+        }
+    } catch(err) {
+        showToast('Parse error: ' + err.message, 'danger');
+    }
+}
+
+const typeIcons = {
+    sent:'<span class="badge bg-danger">SENT</span>',
+    received:'<span class="badge bg-success">RECEIVED</span>',
+    paybill:'<span class="badge bg-primary">PAYBILL</span>',
+    till:'<span class="badge" style="background:#6f42c1;">TILL</span>',
+    withdrawal:'<span class="badge bg-warning text-dark">WITHDRAW</span>',
+    airtime:'<span class="badge bg-info text-dark">AIRTIME</span>',
+    unknown:'<span class="badge bg-secondary">UNKNOWN</span>',
+};
+
+function renderSmsResults(data, imported) {
+    const container = document.getElementById('sms-results');
+    const body      = document.getElementById('sms-result-body');
+    const summary   = document.getElementById('sms-result-summary');
+
+    let summaryText = data.total + ' parsed';
+    if (imported) summaryText += ' · ' + data.imported + ' imported · ' + data.duplicates + ' duplicates';
+    summary.textContent = summaryText;
+
+    body.innerHTML = '';
+    data.parsed.forEach(tx => {
+        const statusBadge = tx.status === 'imported'
+            ? '<span class="badge bg-success">Imported</span>'
+            : tx.status === 'duplicate'
+            ? '<span class="badge bg-secondary">Duplicate</span>'
+            : tx.importable
+            ? '<span class="badge bg-light text-dark border">Preview</span>'
+            : '<span class="badge bg-light text-muted border">Skipped</span>';
+
+        body.insertAdjacentHTML('beforeend', `<tr>
+            <td><code>${escapeHtml(tx.code || '—')}</code></td>
+            <td>${typeIcons[tx.type] || typeIcons.unknown}</td>
+            <td><strong>KSh ${Number(tx.amount).toLocaleString('en-KE',{minimumFractionDigits:2})}</strong></td>
+            <td>${escapeHtml(tx.counterparty)}</td>
+            <td class="text-muted small">${escapeHtml(tx.date ? tx.date.substring(0,10) : '')}</td>
+            <td><span class="badge bg-secondary">${escapeHtml(tx.category)}</span></td>
+            <td>${statusBadge}</td>
+        </tr>`);
+    });
+
+    container.style.display = 'block';
+}
+
+// ── Transaction History ───────────────────────────────────────────────────────
+async function loadTxHistory() {
+    const r    = await fetch('../backend/api/mpesa.php?action=transactions&limit=50');
+    const txs  = await r.json();
+    const cont = document.getElementById('tx-history-container');
+
+    if (!txs.length) {
+        cont.innerHTML = '<div class="text-center text-muted py-5"><i class="fas fa-inbox fa-3x mb-3 d-block"></i>No imported M-Pesa transactions yet.<br><small>Use the "Import M-Pesa SMS" tab to add some.</small></div>';
+        return;
+    }
+
+    let html = '<div class="table-responsive"><table class="table table-hover mb-0"><thead class="table-dark"><tr><th>Code</th><th>Type</th><th>Counterparty</th><th>Amount</th><th>Date</th><th>Balance After</th></tr></thead><tbody>';
+    txs.forEach(tx => {
+        const cls = 'tx-type-' + tx.transaction_type;
+        html += `<tr>
+            <td><code>${escapeHtml(tx.mpesa_code)}</code></td>
+            <td>${typeIcons[tx.transaction_type] || typeIcons.unknown}</td>
+            <td>${escapeHtml(tx.counterparty || '—')}</td>
+            <td class="${cls} fw-bold">KSh ${tx.amount}</td>
+            <td class="text-muted small">${escapeHtml(tx.transaction_date)}</td>
+            <td class="text-muted small">${tx.balance_after ? 'KSh ' + tx.balance_after : '—'}</td>
+        </tr>`;
+    });
+    html += '</tbody></table></div>';
+    cont.innerHTML = html;
+}
+
+// ── Payment Log ───────────────────────────────────────────────────────────────
+async function loadPaymentLog() {
+    const r    = await fetch('../backend/api/mpesa.php?action=payments');
+    const pays = await r.json();
+    const cont = document.getElementById('payment-log-container');
+
+    if (!pays.length) {
+        cont.innerHTML = '<div class="text-center text-muted py-5"><i class="fas fa-receipt fa-3x mb-3 d-block"></i>No STK push payments yet.</div>';
+        return;
+    }
+
+    let html = '<div class="table-responsive"><table class="table table-hover mb-0"><thead class="table-dark"><tr><th>Date</th><th>Phone</th><th>Amount</th><th>Goal</th><th>Receipt</th><th>Status</th></tr></thead><tbody>';
+    pays.forEach(p => {
+        const sc = 'status-' + p.status;
+        html += `<tr>
+            <td class="small text-muted">${escapeHtml(p.created_at)}</td>
+            <td>${escapeHtml(p.phone)}</td>
+            <td class="fw-bold">KSh ${p.amount}</td>
+            <td>${p.goal_name ? escapeHtml(p.goal_name) : '<span class="text-muted">—</span>'}</td>
+            <td><code>${p.mpesa_receipt ? escapeHtml(p.mpesa_receipt) : '—'}</code></td>
+            <td><span class="${sc} fw-semibold text-capitalize">${escapeHtml(p.status)}</span></td>
+        </tr>`;
+    });
+    html += '</tbody></table></div>';
+    cont.innerHTML = html;
+}
+
+// ── Tab lazy-load ─────────────────────────────────────────────────────────────
+document.querySelectorAll('#mpesaTabs button').forEach(btn => {
+    btn.addEventListener('shown.bs.tab', e => {
+        const target = e.target.getAttribute('data-bs-target');
+        if (target === '#tab-history')  loadTxHistory();
+        if (target === '#tab-payments') loadPaymentLog();
+    });
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    loadUserInfo();
+    loadStats();
+    loadGoals();
+});
+</script>
+</body>
+</html>

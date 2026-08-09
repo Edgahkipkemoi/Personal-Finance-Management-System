@@ -25,6 +25,7 @@
                     <li class="nav-item"><a class="nav-link text-white" href="budgets.php"><i class="fas fa-chart-pie me-1"></i>Budgets</a></li>
                     <li class="nav-item"><a class="nav-link text-white" href="goals.html"><i class="fas fa-bullseye me-1"></i>Goals</a></li>
                     <li class="nav-item"><a class="nav-link text-white" href="reports.html"><i class="fas fa-chart-line me-1"></i>Reports</a></li>
+                    <li class="nav-item"><a class="nav-link text-white" href="mpesa.html"><i class="fas fa-mobile-alt me-1"></i>M-Pesa</a></li>
                     <li class="nav-item"><a class="nav-link text-white" href="categories.php"><i class="fas fa-tags me-1"></i>Categories</a></li>
                 </ul>
                 <ul class="navbar-nav">
@@ -127,6 +128,26 @@
             </div>
         </div>
 
+        <!-- M-Pesa Activity Widget -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center" style="background:linear-gradient(135deg,#00a651,#007a3d);color:white;">
+                        <h5 class="mb-0"><i class="fas fa-mobile-alt me-2"></i>Recent M-Pesa Activity</h5>
+                        <a href="mpesa.html" class="btn btn-sm btn-light text-success fw-semibold">
+                            <i class="fas fa-external-link-alt me-1"></i>M-Pesa Hub
+                        </a>
+                    </div>
+                    <div class="card-body" id="mpesa-dashboard-widget">
+                        <div class="text-center py-3 text-muted">
+                            <div class="spinner-border spinner-border-sm text-success" role="status"></div>
+                            <span class="ms-2">Loading M-Pesa activity…</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row">
             <!-- Recent Expenses -->
             <div class="col-md-8">
@@ -176,15 +197,20 @@
                 const data = await response.json();
                 
                 // Check if user is authenticated
-                if (data.error && data.error === 'Not authenticated') {
+                if (response.status === 401 || (data.error && data.error === 'Not authenticated')) {
                     window.location.href = 'login.php';
+                    return;
+                }
+                
+                if (data.error) {
+                    showErrorState('Could not load dashboard data. Please refresh the page.');
                     return;
                 }
                 
                 // Update welcome message with user name
                 if (data.user_name) {
                     document.getElementById('welcome-message').textContent = `Welcome, ${data.user_name}!`;
-                    document.getElementById('user-dropdown').textContent = data.user_name;
+                    document.getElementById('user-dropdown').innerHTML = `<i class="fas fa-user-circle me-1"></i>${data.user_name}`;
                 }
                 
                 // Update summary cards
@@ -215,6 +241,8 @@
                 
                 // Load savings goals
                 loadGoalsSummary();
+                // Load M-Pesa widget
+                loadMpesaWidget();
                 
             } catch (error) {
                 console.error('Error loading dashboard data:', error);
@@ -371,18 +399,68 @@
             container.innerHTML = html;
         }
         
-        function showEmptyState() {
-            // Show empty state for new users or when there's an error
+        function showErrorState(msg) {
             document.getElementById('monthly-expenses').textContent = 'KSh 0.00';
             document.getElementById('monthly-budget').textContent = 'KSh 0.00';
             document.getElementById('remaining-budget').textContent = 'KSh 0.00';
-            
-            updateRecentExpenses([]);
-            updateCategoryBreakdown([]);
+            const errHtml = `<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>${msg}</div>`;
+            document.getElementById('recent-expenses').innerHTML = errHtml;
+            document.getElementById('category-breakdown').innerHTML = errHtml;
+            document.getElementById('goals-summary').innerHTML = errHtml;
+        }
+        
+        function showEmptyState() {
+            showErrorState('Unable to load data. Please check your connection and refresh.');
         }
         
         // Load data when page loads
         document.addEventListener('DOMContentLoaded', loadDashboardData);
+        
+        async function loadMpesaWidget() {
+            try {
+                const r    = await fetch('../backend/api/mpesa.php?action=summary');
+                const data = await r.json();
+                const cont = document.getElementById('mpesa-dashboard-widget');
+                
+                if (!data.recent || data.recent.length === 0) {
+                    cont.innerHTML = `<div class="text-center text-muted py-3">
+                        <i class="fas fa-mobile-alt fa-2x mb-2 d-block" style="color:#00a651;"></i>
+                        <p class="mb-2">No M-Pesa transactions imported yet.</p>
+                        <a href="mpesa.html" class="btn btn-sm btn-success">
+                            <i class="fas fa-file-import me-1"></i>Import M-Pesa SMS
+                        </a>
+                    </div>`;
+                    return;
+                }
+                
+                const typeColors = {sent:'danger',received:'success',paybill:'primary',till:'purple',withdrawal:'warning',airtime:'info'};
+                let html = '<div class="row"><div class="col-md-8"><div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead><tr><th>Date</th><th>Type</th><th>Counterparty</th><th>Amount</th></tr></thead><tbody>';
+                data.recent.forEach(tx => {
+                    html += `<tr>
+                        <td class="small text-muted">${tx.transaction_date}</td>
+                        <td><span class="badge bg-${typeColors[tx.transaction_type]||'secondary'}">${tx.transaction_type.toUpperCase()}</span></td>
+                        <td class="small">${tx.counterparty||'—'}</td>
+                        <td class="fw-bold">KSh ${tx.amount}</td>
+                    </tr>`;
+                });
+                html += `</tbody></table></div></div>
+                    <div class="col-md-4 border-start">
+                        <div class="text-center py-2">
+                            <p class="text-muted small mb-1">Total M-Pesa Spend</p>
+                            <h4 class="text-danger fw-bold">KSh ${data.total_mpesa}</h4>
+                            <p class="text-muted small mb-1 mt-2">Transactions Imported</p>
+                            <h4 class="fw-bold" style="color:#00a651;">${data.tx_count}</h4>
+                            <a href="mpesa.html" class="btn btn-sm btn-success mt-2 w-100">
+                                <i class="fas fa-mobile-alt me-1"></i>Open M-Pesa Hub
+                            </a>
+                        </div>
+                    </div></div>`;
+                cont.innerHTML = html;
+            } catch(e) {
+                document.getElementById('mpesa-dashboard-widget').innerHTML =
+                    '<p class="text-muted text-center py-2 mb-0 small"><i class="fas fa-mobile-alt me-1"></i><a href="mpesa.html">Open M-Pesa Hub</a> to import transactions or fund your goals.</p>';
+            }
+        }
     </script>
 </body>
 </html>

@@ -68,3 +68,65 @@ INSERT INTO categories (category_name, user_id) VALUES
 ('Healthcare', NULL),
 ('Education', NULL),
 ('Other', NULL);
+
+-- Savings goals table
+CREATE TABLE IF NOT EXISTS savings_goals (
+    goal_id INT AUTO_INCREMENT PRIMARY KEY,
+    goal_name VARCHAR(100) NOT NULL,
+    target_amount DECIMAL(10,2) NOT NULL,
+    current_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    deadline DATE NOT NULL,
+    description TEXT,
+    user_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+-- Goal contributions table
+CREATE TABLE IF NOT EXISTS goal_contributions (
+    contribution_id INT AUTO_INCREMENT PRIMARY KEY,
+    goal_id INT NOT NULL,
+    user_id INT NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    contribution_date DATE NOT NULL,
+    description VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (goal_id) REFERENCES savings_goals(goal_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+-- M-Pesa STK Push payment requests
+CREATE TABLE IF NOT EXISTS mpesa_payments (
+    payment_id        INT AUTO_INCREMENT PRIMARY KEY,
+    user_id           INT NOT NULL,
+    goal_id           INT NULL,
+    phone             VARCHAR(20) NOT NULL,
+    amount            DECIMAL(10,2) NOT NULL,
+    checkout_request_id VARCHAR(100) NULL,
+    merchant_request_id VARCHAR(100) NULL,
+    mpesa_receipt     VARCHAR(50) NULL,
+    status            ENUM('pending','completed','failed','cancelled') DEFAULT 'pending',
+    result_desc       VARCHAR(255) NULL,
+    created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (goal_id) REFERENCES savings_goals(goal_id) ON DELETE SET NULL
+);
+
+-- M-Pesa SMS-imported transactions
+CREATE TABLE IF NOT EXISTS mpesa_transactions (
+    transaction_id    INT AUTO_INCREMENT PRIMARY KEY,
+    user_id           INT NOT NULL,
+    mpesa_code        VARCHAR(20) NOT NULL,
+    transaction_type  ENUM('sent','received','paybill','till','airtime','withdrawal') NOT NULL,
+    amount            DECIMAL(10,2) NOT NULL,
+    counterparty      VARCHAR(150) NULL COMMENT 'Person/Business name',
+    transaction_date  DATETIME NOT NULL,
+    balance_after     DECIMAL(10,2) NULL,
+    raw_sms           TEXT NULL,
+    expense_id        INT NULL COMMENT 'Linked expense if auto-imported',
+    created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uniq_mpesa_code (user_id, mpesa_code),
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (expense_id) REFERENCES expenses(expense_id) ON DELETE SET NULL
+);

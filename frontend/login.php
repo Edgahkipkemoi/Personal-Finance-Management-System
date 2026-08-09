@@ -1,3 +1,6 @@
+<?php
+session_start();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,7 +31,6 @@
                     <div class="card-body p-4">
                         
                         <?php
-                        session_start();
                         if (isset($_SESSION['error'])) {
                             echo '<div class="alert alert-danger">' . htmlspecialchars($_SESSION['error']) . '</div>';
                             unset($_SESSION['error']);
@@ -36,6 +38,12 @@
                         if (isset($_SESSION['success'])) {
                             echo '<div class="alert alert-success">' . htmlspecialchars($_SESSION['success']) . '</div>';
                             unset($_SESSION['success']);
+                        }
+                        // Show demo password reset link if available
+                        if (isset($_SESSION['reset_link'])) {
+                            $link = htmlspecialchars($_SESSION['reset_link']);
+                            echo '<div class="alert alert-info"><strong>Demo Reset Link:</strong> <a href="' . $link . '">Click here to reset your password</a></div>';
+                            unset($_SESSION['reset_link']);
                         }
                         ?>
                         

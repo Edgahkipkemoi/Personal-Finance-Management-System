@@ -25,6 +25,7 @@
                     <li class="nav-item"><a class="nav-link text-white" href="budgets.php"><i class="fas fa-chart-pie me-1"></i>Budgets</a></li>
                     <li class="nav-item"><a class="nav-link text-white" href="goals.html"><i class="fas fa-bullseye me-1"></i>Goals</a></li>
                     <li class="nav-item"><a class="nav-link text-white" href="reports.html"><i class="fas fa-chart-line me-1"></i>Reports</a></li>
+                    <li class="nav-item"><a class="nav-link text-white" href="mpesa.html"><i class="fas fa-mobile-alt me-1"></i>M-Pesa</a></li>
                     <li class="nav-item"><a class="nav-link text-white" href="categories.php"><i class="fas fa-tags me-1"></i>Categories</a></li>
                 </ul>
                 <ul class="navbar-nav">
@@ -123,7 +124,7 @@
                     return;
                 }
                 
-                document.getElementById('user-dropdown').textContent = data.user_name;
+                document.getElementById('user-dropdown').innerHTML = `<i class="fas fa-user-circle me-1"></i>${data.user_name}`;
             } catch (error) {
                 console.error('Error loading user info:', error);
             }
@@ -151,7 +152,7 @@
                 const data = await response.json();
                 
                 // Check if user is authenticated
-                if (data.error && data.error === 'Not authenticated') {
+                if (response.status === 401 || (data.error && data.error === 'Not authenticated')) {
                     window.location.href = 'login.php';
                     return;
                 }
@@ -175,7 +176,7 @@
                 
                 let total = 0;
                 expenses.forEach(expense => {
-                    total += parseFloat(expense.amount.replace(',', ''));
+                    total += parseFloat(expense.amount.replace(/,/g, ''));
                     html += `<tr>
                         <td>${expense.date}</td>
                         <td><span class="badge bg-secondary">${expense.category}</span></td>

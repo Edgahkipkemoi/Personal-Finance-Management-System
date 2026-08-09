@@ -1,3 +1,6 @@
+<?php
+session_start();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -45,7 +48,6 @@
     
     <div class="container mt-4">
         <?php
-        session_start();
         if (isset($_SESSION['error'])) {
             echo '<div class="alert alert-danger">' . htmlspecialchars($_SESSION['error']) . '</div>';
             unset($_SESSION['error']);
@@ -122,7 +124,7 @@
                     return;
                 }
                 
-                document.getElementById('user-dropdown').textContent = data.user_name;
+                document.getElementById('user-dropdown').innerHTML = `<i class="fas fa-user-circle me-1"></i>${data.user_name}`;
             } catch (error) {
                 console.error('Error loading user info:', error);
             }
@@ -141,8 +143,8 @@
                 const categories = Array.isArray(data) ? data : [];
                 const container = document.getElementById('categories-list');
                 
-                // Filter out default categories (user_id is null) and only show user's custom categories
-                const userCategories = categories.filter(cat => cat.user_specific === true);
+                // Filter: user_specific is integer 1 for custom, 0 for global
+                const userCategories = categories.filter(cat => parseInt(cat.user_specific) === 1);
                 
                 if (userCategories.length === 0) {
                     container.innerHTML = `

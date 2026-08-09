@@ -7,343 +7,421 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../assets/css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        #report-content { display:none; }
+        #report-content.visible { display:block; }
+        .stat-card { border:none; border-radius:12px; }
+        #generate-btn .spinner-border { display:none; }
+        #generate-btn.loading .spinner-border { display:inline-block; }
+        #generate-btn.loading .btn-text { display:none; }
+
+        /* ── PDF print styles ─────────────────────────────────────── */
+        @media print {
+            nav, #filter-card, #pdf-btn, #generate-btn, .navbar { display:none !important; }
+            body { background:white !important; }
+            #report-content { display:block !important; }
+            .card { border:1px solid #dee2e6 !important; box-shadow:none !important; break-inside:avoid; }
+            #print-header { display:block !important; }
+            canvas { max-width:100% !important; }
+        }
+    </style>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg" style="background:linear-gradient(135deg,#667eea,#764ba2);">
-        <div class="container">
-            <a class="navbar-brand text-white fw-bold" href="dashboard.html">
-                <i class="fas fa-wallet me-2"></i>Finance Manager
-            </a>
-            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item"><a class="nav-link text-white" href="dashboard.html"><i class="fas fa-home me-1"></i>Dashboard</a></li>
-                    <li class="nav-item"><a class="nav-link text-white" href="expenses.html"><i class="fas fa-receipt me-1"></i>Expenses</a></li>
-                    <li class="nav-item"><a class="nav-link text-white" href="budgets.php"><i class="fas fa-chart-pie me-1"></i>Budgets</a></li>
-                    <li class="nav-item"><a class="nav-link text-white" href="goals.html"><i class="fas fa-bullseye me-1"></i>Goals</a></li>
-                    <li class="nav-item"><a class="nav-link text-white fw-semibold active" href="reports.html"><i class="fas fa-chart-line me-1"></i>Reports</a></li>
-                    <li class="nav-item"><a class="nav-link text-white" href="categories.php"><i class="fas fa-tags me-1"></i>Categories</a></li>
-                </ul>
-                <ul class="navbar-nav">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle text-white" href="#" role="button" data-bs-toggle="dropdown" id="user-dropdown">
-                            <i class="fas fa-user-circle me-1"></i>Loading...
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="profile.html"><i class="fas fa-user me-2"></i>My Profile</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item text-danger" href="../backend/auth/logout.php"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
-                        </ul>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-    
-    <div class="container mt-4">
-        <h2>Financial Reports</h2>
-        
-        <!-- Filter Form -->
-        <div class="card mb-4">
-            <div class="card-body">
-                <form class="row g-3" id="report-filters">
-                    <div class="col-md-3">
-                        <label class="form-label">Period</label>
-                        <select class="form-control" id="period-select">
-                            <option value="monthly" selected>Monthly</option>
-                            <option value="weekly">Weekly</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Month</label>
-                        <select class="form-control" id="month-select">
-                            <option value="1">January</option>
-                            <option value="2">February</option>
-                            <option value="3">March</option>
-                            <option value="4">April</option>
-                            <option value="5">May</option>
-                            <option value="6">June</option>
-                            <option value="7">July</option>
-                            <option value="8">August</option>
-                            <option value="9">September</option>
-                            <option value="10">October</option>
-                            <option value="11">November</option>
-                            <option value="12">December</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Year</label>
-                        <select class="form-control" id="year-select">
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <button type="button" class="btn btn-primary mt-4" onclick="generateReport()">Generate Report</button>
-                    </div>
-                </form>
-            </div>
-        </div>
 
-        <!-- Summary Cards -->
-        <div class="row mb-4" id="summary-cards">
-            <div class="col-md-3">
-                <div class="card text-white bg-primary">
-                    <div class="card-body">
-                        <h5>Total Spent</h5>
-                        <h3 id="total-spent">KSh 0.00</h3>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card text-white bg-info">
-                    <div class="card-body">
-                        <h5>Transactions</h5>
-                        <h3 id="total-transactions">0</h3>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card text-white bg-success">
-                    <div class="card-body">
-                        <h5>Average</h5>
-                        <h3 id="average-amount">KSh 0.00</h3>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card text-white bg-warning">
-                    <div class="card-body">
-                        <h5>Highest</h5>
-                        <h3 id="highest-amount">KSh 0.00</h3>
-                    </div>
-                </div>
-            </div>
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg" style="background:linear-gradient(135deg,#667eea,#764ba2);">
+    <div class="container">
+        <a class="navbar-brand text-white fw-bold" href="dashboard.html">
+            <i class="fas fa-wallet me-2"></i>Finance Manager
+        </a>
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item"><a class="nav-link text-white" href="dashboard.html"><i class="fas fa-home me-1"></i>Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link text-white" href="expenses.html"><i class="fas fa-receipt me-1"></i>Expenses</a></li>
+                <li class="nav-item"><a class="nav-link text-white" href="budgets.php"><i class="fas fa-chart-pie me-1"></i>Budgets</a></li>
+                <li class="nav-item"><a class="nav-link text-white" href="goals.html"><i class="fas fa-bullseye me-1"></i>Goals</a></li>
+                <li class="nav-item"><a class="nav-link text-white fw-semibold active" href="reports.html"><i class="fas fa-chart-line me-1"></i>Reports</a></li>
+                <li class="nav-item"><a class="nav-link text-white" href="mpesa.html"><i class="fas fa-mobile-alt me-1"></i>M-Pesa</a></li>
+                <li class="nav-item"><a class="nav-link text-white" href="categories.php"><i class="fas fa-tags me-1"></i>Categories</a></li>
+            </ul>
+            <ul class="navbar-nav">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-white" href="#" role="button" data-bs-toggle="dropdown" id="user-dropdown">
+                        <i class="fas fa-user-circle me-1"></i>Loading...
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="profile.html"><i class="fas fa-user me-2"></i>My Profile</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="../backend/auth/logout.php"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                    </ul>
+                </li>
+            </ul>
         </div>
+    </div>
+</nav>
 
-        <div class="row">
-            <!-- Category Breakdown Chart -->
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5>Spending by Category</h5>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="categoryChart"></canvas>
-                        <div id="no-category-data" class="text-center text-muted" style="display: none;">
-                            <p>No spending data available for the selected period.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Daily Spending Chart -->
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5>Daily Spending Trend</h5>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="dailyChart"></canvas>
-                        <div id="no-daily-data" class="text-center text-muted" style="display: none;">
-                            <p>No daily spending data available.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+<div class="container mt-4 mb-5">
 
-        <!-- Category Details Table -->
-        <div class="card mt-4">
-            <div class="card-header">
-                <h5>Category Breakdown</h5>
-            </div>
-            <div class="card-body">
-                <div id="category-table">
-                    <p class="text-center text-muted">Generate a report to see category breakdown.</p>
+    <!-- Page title -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0"><i class="fas fa-chart-line me-2 text-primary"></i>Financial Reports</h2>
+        <button id="pdf-btn" class="btn btn-danger d-none" onclick="exportPDF()">
+            <i class="fas fa-file-pdf me-2"></i>Export as PDF
+        </button>
+    </div>
+
+    <!-- Filter card -->
+    <div class="card shadow-sm mb-4" id="filter-card">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Month</label>
+                    <select class="form-select" id="month-select">
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Year</label>
+                    <select class="form-select" id="year-select"></select>
+                </div>
+                <div class="col-md-4">
+                    <button id="generate-btn" class="btn btn-primary w-100" onclick="generateReport()">
+                        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        <span class="btn-text"><i class="fas fa-chart-bar me-2"></i>Generate Report</span>
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        let categoryChart = null;
-        let dailyChart = null;
+    <!-- Error alert -->
+    <div id="report-error" class="alert alert-danger d-none">
+        <i class="fas fa-exclamation-triangle me-2"></i><span id="error-msg"></span>
+    </div>
 
-        async function loadUserInfo() {
-            try {
-                const response = await fetch('../backend/api/user.php');
-                const data = await response.json();
-                
-                if (!data.authenticated) {
-                    window.location.href = 'login.php';
-                    return;
-                }
-                
-                document.getElementById('user-dropdown').textContent = data.user_name;
-            } catch (error) {
-                console.error('Error loading user info:', error);
-            }
+    <!-- Report content (hidden until generated) -->
+    <div id="report-content">
+
+        <!-- PDF print header (hidden on screen, visible on print) -->
+        <div id="print-header" style="display:none;" class="mb-4">
+            <h3 class="fw-bold">Personal Finance Manager</h3>
+            <p class="text-muted mb-0">Financial Report — <span id="print-period"></span></p>
+            <hr>
+        </div>
+
+        <!-- Report title bar -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 id="report-title" class="mb-0 text-muted"></h5>
+            <small class="text-muted" id="generated-at"></small>
+        </div>
+
+        <!-- Summary cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="card stat-card h-100" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;">
+                    <div class="card-body">
+                        <p class="mb-1 small opacity-75">Total Spent</p>
+                        <h4 id="total-spent" class="fw-bold mb-0">KSh 0.00</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card stat-card h-100" style="background:linear-gradient(135deg,#06b6d4,#0891b2);color:white;">
+                    <div class="card-body">
+                        <p class="mb-1 small opacity-75">Transactions</p>
+                        <h4 id="total-transactions" class="fw-bold mb-0">0</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card stat-card h-100" style="background:linear-gradient(135deg,#10b981,#059669);color:white;">
+                    <div class="card-body">
+                        <p class="mb-1 small opacity-75">Average</p>
+                        <h4 id="average-amount" class="fw-bold mb-0">KSh 0.00</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card stat-card h-100" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:white;">
+                    <div class="card-body">
+                        <p class="mb-1 small opacity-75">Highest Single</p>
+                        <h4 id="highest-amount" class="fw-bold mb-0">KSh 0.00</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-5">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header fw-semibold bg-white border-bottom">
+                        <i class="fas fa-chart-pie me-2 text-primary"></i>Spending by Category
+                    </div>
+                    <div class="card-body d-flex align-items-center justify-content-center" style="min-height:280px;">
+                        <canvas id="categoryChart"></canvas>
+                        <div id="no-category-data" class="text-center text-muted" style="display:none;">
+                            <i class="fas fa-chart-pie fa-3x mb-3 opacity-25"></i>
+                            <p>No spending data for this period.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-7">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header fw-semibold bg-white border-bottom">
+                        <i class="fas fa-chart-line me-2 text-success"></i>Daily Spending Trend
+                    </div>
+                    <div class="card-body d-flex align-items-center justify-content-center" style="min-height:280px;">
+                        <canvas id="dailyChart"></canvas>
+                        <div id="no-daily-data" class="text-center text-muted" style="display:none;">
+                            <i class="fas fa-chart-line fa-3x mb-3 opacity-25"></i>
+                            <p>No daily data for this period.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Category breakdown table -->
+        <div class="card shadow-sm">
+            <div class="card-header fw-semibold bg-white border-bottom">
+                <i class="fas fa-table me-2 text-warning"></i>Category Breakdown
+            </div>
+            <div class="card-body p-0">
+                <div id="category-table" class="p-3 text-center text-muted">—</div>
+            </div>
+        </div>
+
+    </div><!-- /report-content -->
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+let categoryChart = null;
+let dailyChart     = null;
+const MONTHS = ['','January','February','March','April','May','June',
+                 'July','August','September','October','November','December'];
+const COLORS  = ['#6366f1','#10b981','#f59e0b','#ef4444','#06b6d4',
+                  '#8b5cf6','#ec4899','#14b8a6','#f97316','#84cc16'];
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+async function loadUserInfo() {
+    const r = await fetch('../backend/api/user.php');
+    const d = await r.json();
+    if (!d.authenticated) { window.location.href = 'login.php'; return; }
+    document.getElementById('user-dropdown').innerHTML =
+        `<i class="fas fa-user-circle me-1"></i>${d.user_name}`;
+}
+
+// ── Generate Report ───────────────────────────────────────────────────────────
+async function generateReport() {
+    const month = parseInt(document.getElementById('month-select').value);
+    const year  = parseInt(document.getElementById('year-select').value);
+    const btn   = document.getElementById('generate-btn');
+    const errEl = document.getElementById('report-error');
+
+    // Show spinner
+    btn.classList.add('loading');
+    btn.disabled = true;
+    errEl.classList.add('d-none');
+
+    try {
+        const res  = await fetch(`../backend/api/reports.php?month=${month}&year=${year}`);
+        const data = await res.json();
+
+        if (data.error) {
+            document.getElementById('error-msg').textContent = data.error;
+            errEl.classList.remove('d-none');
+            return;
         }
 
-        async function generateReport() {
-            const period = document.getElementById('period-select').value;
-            const month = document.getElementById('month-select').value;
-            const year = document.getElementById('year-select').value;
-            
-            try {
-                const response = await fetch(`../backend/api/reports.php?period=${period}&month=${month}&year=${year}`);
-                const data = await response.json();
-                
-                if (data.error) {
-                    alert('Error generating report: ' + data.error);
-                    return;
-                }
-                
-                updateSummaryCards(data.summary);
-                updateCategoryChart(data.categories);
-                updateDailyChart(data.daily);
-                updateCategoryTable(data.categories);
-                
-            } catch (error) {
-                console.error('Error generating report:', error);
-                alert('Failed to generate report. Please try again.');
-            }
-        }
+        // Show report panel
+        const content = document.getElementById('report-content');
+        content.classList.add('visible');
+        document.getElementById('pdf-btn').classList.remove('d-none');
 
-        function updateSummaryCards(summary) {
-            document.getElementById('total-spent').textContent = 'KSh ' + (summary.total || '0.00');
-            document.getElementById('total-transactions').textContent = summary.transactions || '0';
-            document.getElementById('average-amount').textContent = 'KSh ' + (summary.average || '0.00');
-            document.getElementById('highest-amount').textContent = 'KSh ' + (summary.highest || '0.00');
-        }
+        // Period label
+        const label = MONTHS[month] + ' ' + year;
+        document.getElementById('report-title').textContent = 'Report for ' + label;
+        document.getElementById('print-period').textContent = label;
+        document.getElementById('generated-at').textContent =
+            'Generated ' + new Date().toLocaleString('en-KE');
 
-        function updateCategoryChart(categories) {
-            const ctx = document.getElementById('categoryChart');
-            
-            if (categoryChart) {
-                categoryChart.destroy();
-            }
-            
-            if (!categories || categories.length === 0) {
-                document.getElementById('no-category-data').style.display = 'block';
-                ctx.style.display = 'none';
-                return;
-            }
-            
-            document.getElementById('no-category-data').style.display = 'none';
-            ctx.style.display = 'block';
-            
-            categoryChart = new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: categories.map(c => c.name),
-                    datasets: [{
-                        data: categories.map(c => parseFloat(c.total)),
-                        backgroundColor: [
-                            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
-                            '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF'
-                        ]
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
-                        }
-                    }
-                }
-            });
-        }
+        renderSummary(data.summary);
+        renderCategoryChart(data.categories);
+        renderDailyChart(data.daily);
+        renderCategoryTable(data.categories, data.summary.total);
 
-        function updateDailyChart(daily) {
-            const ctx = document.getElementById('dailyChart');
-            
-            if (dailyChart) {
-                dailyChart.destroy();
-            }
-            
-            if (!daily || daily.length === 0) {
-                document.getElementById('no-daily-data').style.display = 'block';
-                ctx.style.display = 'none';
-                return;
-            }
-            
-            document.getElementById('no-daily-data').style.display = 'none';
-            ctx.style.display = 'block';
-            
-            dailyChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: daily.map(d => d.date),
-                    datasets: [{
-                        label: 'Daily Spending',
-                        data: daily.map(d => parseFloat(d.amount)),
-                        borderColor: '#36A2EB',
-                        backgroundColor: 'rgba(54, 162, 235, 0.1)',
-                        tension: 0.1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-        }
+    } catch (e) {
+        document.getElementById('error-msg').textContent = 'Network error — please try again.';
+        errEl.classList.remove('d-none');
+    } finally {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+    }
+}
 
-        function updateCategoryTable(categories) {
-            const container = document.getElementById('category-table');
-            
-            if (!categories || categories.length === 0) {
-                container.innerHTML = '<p class="text-center text-muted">No category data available.</p>';
-                return;
-            }
-            
-            let html = '<table class="table"><thead><tr><th>Category</th><th>Total Amount</th><th>Percentage</th></tr></thead><tbody>';
-            
-            const total = categories.reduce((sum, cat) => sum + parseFloat(cat.total), 0);
-            
-            categories.forEach(category => {
-                const percentage = total > 0 ? ((parseFloat(category.total) / total) * 100).toFixed(1) : 0;
-                html += `<tr>
-                    <td>${category.name}</td>
-                    <td>KSh ${category.total}</td>
-                    <td>${percentage}%</td>
-                </tr>`;
-            });
-            
-            html += '</tbody></table>';
-            container.innerHTML = html;
-        }
+// ── Summary cards ─────────────────────────────────────────────────────────────
+function renderSummary(s) {
+    document.getElementById('total-spent').textContent       = 'KSh ' + s.total;
+    document.getElementById('total-transactions').textContent = s.transactions;
+    document.getElementById('average-amount').textContent    = 'KSh ' + s.average;
+    document.getElementById('highest-amount').textContent    = 'KSh ' + s.highest;
+}
 
-        // Set current month and year as default
-        document.addEventListener('DOMContentLoaded', function() {
-            const currentMonth = new Date().getMonth() + 1;
-            const currentYear = new Date().getFullYear();
-            
-            // Dynamically populate years (5 years back, 1 ahead)
-            const yearSelect = document.getElementById('year-select');
-            for (let y = currentYear + 1; y >= currentYear - 4; y--) {
-                const opt = document.createElement('option');
-                opt.value = y;
-                opt.textContent = y;
-                if (y === currentYear) opt.selected = true;
-                yearSelect.appendChild(opt);
-            }
-            
-            document.getElementById('month-select').value = currentMonth;
-            
-            loadUserInfo();
-            generateReport(); // Generate initial report
-        });
-    </script>
+// ── Category pie chart ────────────────────────────────────────────────────────
+function renderCategoryChart(categories) {
+    const canvas = document.getElementById('categoryChart');
+    const noData = document.getElementById('no-category-data');
+
+    if (categoryChart) { categoryChart.destroy(); categoryChart = null; }
+
+    if (!categories || categories.length === 0) {
+        canvas.style.display = 'none';
+        noData.style.display = 'block';
+        return;
+    }
+    canvas.style.display = 'block';
+    noData.style.display = 'none';
+
+    categoryChart = new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+            labels:   categories.map(c => c.name),
+            datasets: [{ data: categories.map(c => parseFloat(c.total.replace(/,/g,''))),
+                         backgroundColor: COLORS, borderWidth: 2 }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } }
+        }
+    });
+}
+
+// ── Daily line chart ──────────────────────────────────────────────────────────
+function renderDailyChart(daily) {
+    const canvas = document.getElementById('dailyChart');
+    const noData = document.getElementById('no-daily-data');
+
+    if (dailyChart) { dailyChart.destroy(); dailyChart = null; }
+
+    if (!daily || daily.length === 0) {
+        canvas.style.display = 'none';
+        noData.style.display = 'block';
+        return;
+    }
+    canvas.style.display = 'block';
+    noData.style.display = 'none';
+
+    dailyChart = new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels:   daily.map(d => d.date),
+            datasets: [{
+                label:           'Daily Spending (KSh)',
+                data:            daily.map(d => parseFloat(d.amount.replace(/,/g,''))),
+                borderColor:     '#6366f1',
+                backgroundColor: 'rgba(99,102,241,0.1)',
+                borderWidth:     2,
+                pointRadius:     4,
+                tension:         0.3,
+                fill:            true,
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales:  { y: { beginAtZero: true,
+                            ticks: { callback: v => 'KSh ' + v.toLocaleString() } } }
+        }
+    });
+}
+
+// ── Category table ────────────────────────────────────────────────────────────
+function renderCategoryTable(categories, totalStr) {
+    const container = document.getElementById('category-table');
+
+    if (!categories || categories.length === 0) {
+        container.innerHTML = '<p class="text-center text-muted py-3">No category data for this period.</p>';
+        return;
+    }
+
+    const grand = parseFloat(totalStr.replace(/,/g,''));
+    let html = `<table class="table table-hover mb-0">
+        <thead class="table-dark">
+            <tr><th>#</th><th>Category</th><th class="text-end">Amount</th>
+                <th style="width:35%">Share</th><th class="text-end">%</th></tr>
+        </thead><tbody>`;
+
+    categories.forEach((cat, i) => {
+        const amt = parseFloat(cat.total.replace(/,/g,''));
+        const pct = grand > 0 ? (amt / grand * 100).toFixed(1) : 0;
+        const col = COLORS[i % COLORS.length];
+        html += `<tr>
+            <td class="text-muted small">${i+1}</td>
+            <td>${cat.name}</td>
+            <td class="text-end fw-semibold">KSh ${cat.total}</td>
+            <td><div class="progress" style="height:8px;">
+                <div class="progress-bar" style="width:${pct}%;background:${col};"></div>
+            </div></td>
+            <td class="text-end text-muted small">${pct}%</td>
+        </tr>`;
+    });
+
+    html += `</tbody><tfoot class="table-light fw-bold">
+        <tr><td colspan="2">Total</td>
+            <td class="text-end">KSh ${totalStr}</td>
+            <td></td><td class="text-end">100%</td></tr>
+    </tfoot></table>`;
+    container.innerHTML = html;
+}
+
+// ── PDF export via browser print ──────────────────────────────────────────────
+function exportPDF() {
+    // Make print header visible for print
+    document.getElementById('print-header').style.display = 'block';
+    window.print();
+    // Hide it again after print dialog closes
+    setTimeout(() => {
+        document.getElementById('print-header').style.display = 'none';
+    }, 1000);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+    const now  = new Date();
+    const curM = now.getMonth() + 1;
+    const curY = now.getFullYear();
+
+    // Populate year dropdown
+    const ySel = document.getElementById('year-select');
+    for (let y = curY + 1; y >= curY - 4; y--) {
+        const o = document.createElement('option');
+        o.value = y; o.textContent = y;
+        if (y === curY) o.selected = true;
+        ySel.appendChild(o);
+    }
+    document.getElementById('month-select').value = curM;
+
+    loadUserInfo();
+    generateReport(); // auto-generate for current month
+});
+</script>
 </body>
 </html>

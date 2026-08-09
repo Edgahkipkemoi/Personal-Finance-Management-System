@@ -31,10 +31,11 @@ try {
     $stmt->bindParam(':expense_id', $expense_id);
     $stmt->bindParam(':user_id', $user_id);
     
-    if ($stmt->execute()) {
+    $stmt->execute();
+    if ($stmt->rowCount() > 0) {
         $_SESSION['success'] = 'Expense deleted successfully!';
     } else {
-        $_SESSION['error'] = 'Failed to delete expense';
+        $_SESSION['error'] = 'Expense not found or already deleted';
     }
     
 } catch (Exception $e) {

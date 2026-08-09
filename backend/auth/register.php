@@ -52,35 +52,26 @@ try {
     if ($stmt->execute()) {
         $user_id = $db->lastInsertId();
         
-        // Create default categories for new user
-        $categories = ['Food & Dining', 'Transportation', 'Shopping', 'Entertainment', 'Bills & Utilities', 'Healthcare', 'Education', 'Other'];
-        $cat_query = "INSERT INTO categories (category_name, user_id) VALUES (:category_name, :user_id)";
-        $cat_stmt = $db->prepare($cat_query);
-        
-        foreach ($categories as $category) {
-            $cat_stmt->bindParam(':category_name', $category);
-            $cat_stmt->bindParam(':user_id', $user_id);
-            $cat_stmt->execute();
-        }
+        // Do NOT insert per-user copies of default categories.
+        // Global categories (user_id IS NULL) are already in the DB and shared by all users.
         
         // Set session
         $_SESSION['user_id'] = $user_id;
         $_SESSION['user_name'] = $name;
-        $_SESSION['success'] = 'Registration successful!';
+        $_SESSION['success'] = 'Registration successful! Welcome, ' . htmlspecialchars($name) . '!';
         
         // Redirect to dashboard
         header('Location: ../../frontend/dashboard.html');
         exit();
     } else {
-        $_SESSION['error'] = 'Registration failed';
+        $_SESSION['error'] = 'Registration failed. Please try again.';
         header('Location: ../../frontend/login.php');
         exit();
     }
     
 } catch (Exception $e) {
-    $_SESSION['error'] = 'Database error: ' . $e->getMessage();
+    $_SESSION['error'] = 'An error occurred. Please try again.';
     header('Location: ../../frontend/login.php');
     exit();
 }
-?>
 ?>

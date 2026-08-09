@@ -4,7 +4,6 @@ require_once '../config/database.php';
 
 header('Content-Type: application/json');
 
-// Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
     echo json_encode(['error' => 'Not authenticated']);
@@ -12,27 +11,23 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 try {
-    $database = new Database();
-    $db = $database->connect();
-    $user_id = $_SESSION['user_id'];
-    
-    // Get all categories for the user (including default ones)
-    // Mark user-specific categories to distinguish them
-    $query = "SELECT category_id as id, 
-                     category_name as name,
-                     CASE WHEN user_id IS NULL THEN 0 ELSE 1 END as user_specific
-              FROM categories 
-              WHERE user_id = :user_id OR user_id IS NULL 
-              ORDER BY user_specific DESC, category_name";
-    $stmt = $db->prepare($query);
-    $stmt->bindParam(':user_id', $user_id);
-    $stmt->execute();
-    $categories = $stmt->fetchAll();
-    
-    echo json_encode($categories);
-    
+    $db      = (new Database())->connect();
+    $user_id = (int) $_SESSION['user_id'];
+
+    // user_specific returned as int 1/0 — JS must use == 1, not === true
+    $stmt = $db->prepare(
+        "SELECT category_id AS id,
+                category_name AS name,
+                CASE WHEN user_id IS NULL THEN 0 ELSE 1 END AS user_specific
+         FROM categories
+         WHERE user_id = ? OR user_id IS NULL
+         ORDER BY user_specific DESC, category_name ASC"
+    );
+    $stmt->execute([$user_id]);
+
+    echo json_encode($stmt->fetchAll());
+
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode(['error' => 'Server error: ' . $e->getMessage()]);
 }
-?>

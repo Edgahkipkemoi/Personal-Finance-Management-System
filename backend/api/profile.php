@@ -4,7 +4,6 @@ require_once '../config/database.php';
 
 header('Content-Type: application/json');
 
-// Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
     echo json_encode(['error' => 'Not authenticated']);
@@ -12,62 +11,58 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 try {
-    $database = new Database();
-    $db = $database->connect();
-    $user_id = $_SESSION['user_id'];
-    
-    // Get user profile information
-    $query = "SELECT user_id, name, email, created_at FROM users WHERE user_id = :user_id";
-    $stmt = $db->prepare($query);
-    $stmt->bindParam(':user_id', $user_id);
-    $stmt->execute();
+    $db      = (new Database())->connect();
+    $user_id = (int) $_SESSION['user_id'];
+
+    // User info
+    $stmt = $db->prepare(
+        "SELECT user_id, name, email, created_at FROM users WHERE user_id = ?"
+    );
+    $stmt->execute([$user_id]);
     $user = $stmt->fetch();
-    
+
     if (!$user) {
         http_response_code(404);
         echo json_encode(['error' => 'User not found']);
         exit();
     }
-    
-    // Get user statistics
-    $stats_query = "SELECT 
-                        COUNT(DISTINCT e.expense_id) as total_expenses,
-                        COALESCE(SUM(e.amount), 0) as total_spent,
-                        COUNT(DISTINCT b.budget_id) as budgets_set,
-                        COUNT(DISTINCT c.category_id) as custom_categories
-                    FROM users u
-                    LEFT JOIN expenses e ON u.user_id = e.user_id
-                    LEFT JOIN budgets b ON u.user_id = b.user_id
-                    LEFT JOIN categories c ON u.user_id = c.user_id
-                    WHERE u.user_id = :user_id";
-    
-    $stats_stmt = $db->prepare($stats_query);
-    $stats_stmt->bindParam(':user_id', $user_id);
-    $stats_stmt->execute();
-    $stats = $stats_stmt->fetch();
-    
-    // Calculate days since registration
-    $registration_date = new DateTime($user['created_at']);
-    $current_date = new DateTime();
-    $days_registered = $current_date->diff($registration_date)->days;
-    
-    // Return profile data
+
+    // Stats — separate queries to avoid multi-join counting issues
+    $stmt = $db->prepare("SELECT COUNT(*) FROM expenses WHERE user_id = ?");
+    $stmt->execute([$user_id]);
+    $total_expenses = (int) $stmt->fetchColumn();
+
+    $stmt = $db->prepare("SELECT COALESCE(SUM(amount),0) FROM expenses WHERE user_id = ?");
+    $stmt->execute([$user_id]);
+    $total_spent = (float) $stmt->fetchColumn();
+
+    $stmt = $db->prepare("SELECT COUNT(*) FROM budgets WHERE user_id = ?");
+    $stmt->execute([$user_id]);
+    $budgets_set = (int) $stmt->fetchColumn();
+
+    $stmt = $db->prepare(
+        "SELECT COUNT(*) FROM categories WHERE user_id = ? AND user_id IS NOT NULL"
+    );
+    $stmt->execute([$user_id]);
+    $custom_categories = (int) $stmt->fetchColumn();
+
+    $days = (new DateTime())->diff(new DateTime($user['created_at']))->days;
+
     echo json_encode([
-        'user_id' => $user['user_id'],
-        'name' => $user['name'],
-        'email' => $user['email'],
-        'member_since' => date('M d, Y', strtotime($user['created_at'])),
-        'days_registered' => $days_registered,
+        'user_id'         => $user['user_id'],
+        'name'            => $user['name'],
+        'email'           => $user['email'],
+        'member_since'    => date('M d, Y', strtotime($user['created_at'])),
+        'days_registered' => $days,
         'stats' => [
-            'total_expenses' => $stats['total_expenses'],
-            'total_spent' => number_format($stats['total_spent'], 2),
-            'budgets_set' => $stats['budgets_set'],
-            'custom_categories' => $stats['custom_categories']
-        ]
+            'total_expenses'    => $total_expenses,
+            'total_spent'       => number_format($total_spent, 2),
+            'budgets_set'       => $budgets_set,
+            'custom_categories' => $custom_categories,
+        ],
     ]);
-    
+
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode(['error' => 'Server error: ' . $e->getMessage()]);
 }
-?>
