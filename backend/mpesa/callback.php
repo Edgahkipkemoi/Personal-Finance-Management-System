@@ -69,47 +69,77 @@ try {
 
         // 2. Record as goal contribution if linked to a goal
         if ($payment['goal_id']) {
-            $db->prepare(
-                'INSERT INTO goal_contributions
-                 (goal_id, user_id, amount, contribution_date, description)
-                 VALUES (?, ?, ?, CURDATE(), ?)'
-            )->execute([
+            // Check if contribution already exists (prevent duplicates)
+            $existingContrib = $db->prepare(
+                'SELECT COUNT(*) as cnt FROM goal_contributions 
+                 WHERE goal_id = ? AND description LIKE ? AND amount = ?'
+            );
+            $existingContrib->execute([
                 $payment['goal_id'],
-                $payment['user_id'],
-                $amount,
-                'M-Pesa ' . ($receipt ?? 'payment')
+                '%' . ($receipt ?? 'payment') . '%',
+                $amount
             ]);
+            $exists = $existingContrib->fetch()['cnt'];
+            
+            if (!$exists) {
+                $db->prepare(
+                    'INSERT INTO goal_contributions
+                     (goal_id, user_id, amount, contribution_date, description)
+                     VALUES (?, ?, ?, CURDATE(), ?)'
+                )->execute([
+                    $payment['goal_id'],
+                    $payment['user_id'],
+                    $amount,
+                    'M-Pesa ' . ($receipt ?? 'payment')
+                ]);
 
-            // Recalculate goal current_amount
-            $db->prepare(
-                'UPDATE savings_goals
-                 SET current_amount = (
-                     SELECT COALESCE(SUM(amount), 0)
-                     FROM goal_contributions
-                     WHERE goal_id = ?
-                 )
-                 WHERE goal_id = ?'
-            )->execute([$payment['goal_id'], $payment['goal_id']]);
+                // Recalculate goal current_amount
+                $db->prepare(
+                    'UPDATE savings_goals
+                     SET current_amount = (
+                         SELECT COALESCE(SUM(amount), 0)
+                         FROM goal_contributions
+                         WHERE goal_id = ?
+                     )
+                     WHERE goal_id = ?'
+                )->execute([$payment['goal_id'], $payment['goal_id']]);
+            }
         }
 
-        // 3. Auto-record as an expense (category: Bills & Utilities or uncategorised)
-        $catStmt = $db->prepare(
-            "SELECT category_id FROM categories
-             WHERE category_name = 'Bills & Utilities' AND user_id IS NULL LIMIT 1"
+        // 3. Auto-record as an expense (check for duplicates first)
+        $existingExpense = $db->prepare(
+            'SELECT COUNT(*) as cnt FROM expenses 
+             WHERE user_id = ? AND description LIKE ? AND amount = ?'
         );
-        $catStmt->execute();
-        $cat = $catStmt->fetch();
-
-        $db->prepare(
-            'INSERT INTO expenses
-             (amount, description, expense_date, category_id, user_id)
-             VALUES (?, ?, CURDATE(), ?, ?)'
-        )->execute([
-            $amount,
-            'M-Pesa ' . ($receipt ?? '') . ($payment['goal_id'] ? ' (Goal contribution)' : ''),
-            $cat ? $cat['category_id'] : null,
+        $existingExpense->execute([
             $payment['user_id'],
+            '%M-Pesa ' . ($receipt ?? '') . '%',
+            $amount
         ]);
+        $expenseExists = $existingExpense->fetch()['cnt'];
+        
+        if (!$expenseExists) {
+            // Get Savings or Bills category
+            $catStmt = $db->prepare(
+                "SELECT category_id FROM categories
+                 WHERE (category_name = 'Savings' OR category_name = 'Bills & Utilities') 
+                 AND (user_id = ? OR user_id IS NULL)
+                 ORDER BY user_id DESC LIMIT 1"
+            );
+            $catStmt->execute([$payment['user_id']]);
+            $cat = $catStmt->fetch();
+
+            $db->prepare(
+                'INSERT INTO expenses
+                 (amount, description, expense_date, category_id, user_id)
+                 VALUES (?, ?, CURDATE(), ?, ?)'
+            )->execute([
+                $amount,
+                'M-Pesa ' . ($receipt ?? '') . ($payment['goal_id'] ? ' (Goal funding)' : ''),
+                $cat ? $cat['category_id'] : null,
+                $payment['user_id'],
+            ]);
+        }
 
     } else {
         // ── PAYMENT FAILED / CANCELLED ───────────────────────────────────────

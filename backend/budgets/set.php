@@ -48,27 +48,29 @@ try {
     $db = $database->connect();
     $user_id = $_SESSION['user_id'];
     
-    // Upsert budget: try update first, insert if no existing row
-    $update_query = "UPDATE budgets SET amount = :amount WHERE user_id = :user_id AND month = :month AND year = :year";
-    $update_stmt = $db->prepare($update_query);
-    $update_stmt->bindParam(':amount', $amount);
-    $update_stmt->bindParam(':user_id', $user_id);
-    $update_stmt->bindParam(':month', $month);
-    $update_stmt->bindParam(':year', $year);
-    $update_stmt->execute();
+    // Check if budget exists for this month/year
+    $check_query = "SELECT amount FROM budgets WHERE user_id = ? AND month = ? AND year = ?";
+    $check_stmt = $db->prepare($check_query);
+    $check_stmt->execute([$user_id, $month, $year]);
+    $existing = $check_stmt->fetch(PDO::FETCH_ASSOC);
     
-    // If no rows were affected, insert new budget
-    if ($update_stmt->rowCount() === 0) {
-        $insert_query = "INSERT INTO budgets (amount, month, year, user_id) VALUES (:amount, :month, :year, :user_id)";
+    if ($existing) {
+        // ADD to existing budget
+        $update_query = "UPDATE budgets SET amount = amount + ? WHERE user_id = ? AND month = ? AND year = ?";
+        $update_stmt = $db->prepare($update_query);
+        $update_stmt->execute([$amount, $user_id, $month, $year]);
+        
+        $old_amount = number_format($existing['amount'], 2);
+        $new_total = number_format($existing['amount'] + $amount, 2);
+        $_SESSION['success'] = "Budget updated! Added KSh " . number_format($amount, 2) . " to existing KSh $old_amount. New total: KSh $new_total";
+    } else {
+        // Insert new budget
+        $insert_query = "INSERT INTO budgets (amount, month, year, user_id) VALUES (?, ?, ?, ?)";
         $insert_stmt = $db->prepare($insert_query);
-        $insert_stmt->bindParam(':amount', $amount);
-        $insert_stmt->bindParam(':month', $month);
-        $insert_stmt->bindParam(':year', $year);
-        $insert_stmt->bindParam(':user_id', $user_id);
-        $insert_stmt->execute();
+        $insert_stmt->execute([$amount, $month, $year, $user_id]);
+        
+        $_SESSION['success'] = 'Budget set successfully for KSh ' . number_format($amount, 2) . '!';
     }
-    
-    $_SESSION['success'] = 'Budget set successfully!';
     
 } catch (Exception $e) {
     $_SESSION['error'] = 'Database error: ' . $e->getMessage();

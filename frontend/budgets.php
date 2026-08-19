@@ -67,14 +67,15 @@ session_start();
                         <h5>Set Monthly Budget</h5>
                     </div>
                     <div class="card-body">
-                        <form action="../backend/budgets/set.php" method="POST">
+                        <form action="../backend/budgets/set.php" method="POST" id="budget-form">
                             <div class="mb-3">
                                 <label class="form-label">Budget Amount (KSh)</label>
-                                <input type="number" name="amount" step="0.01" class="form-control" required>
+                                <input type="number" name="amount" step="0.01" class="form-control" id="budget-amount" required>
+                                <div class="form-text" id="budget-info"></div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Month</label>
-                                <select name="month" class="form-control" required>
+                                <select name="month" class="form-control" id="budget-month" required>
                                     <option value="1">January</option>
                                     <option value="2">February</option>
                                     <option value="3">March</option>
@@ -91,7 +92,7 @@ session_start();
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Year</label>
-                                <select name="year" class="form-control" required>
+                                <select name="year" class="form-control" id="budget-year" required>
                                     <?php
                                     $cy = (int)date('Y');
                                     for ($y = $cy - 2; $y <= $cy + 3; $y++) {
@@ -101,7 +102,7 @@ session_start();
                                     ?>
                                 </select>
                             </div>
-                            <button type="submit" class="btn btn-primary w-100">Set Budget</button>
+                            <button type="submit" class="btn btn-primary w-100" id="submit-btn">Set Budget</button>
                         </form>
                     </div>
                 </div>
@@ -128,6 +129,8 @@ session_start();
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        let budgetsData = [];
+        
         async function loadUserInfo() {
             try {
                 const response = await fetch('../backend/api/user.php');
@@ -154,10 +157,10 @@ session_start();
                     return;
                 }
                 
-                const budgets = Array.isArray(data) ? data : [];
+                budgetsData = Array.isArray(data) ? data : [];
                 const container = document.getElementById('budgets-list');
                 
-                if (budgets.length === 0) {
+                if (budgetsData.length === 0) {
                     container.innerHTML = `
                         <div class="text-center text-muted py-5">
                             <i class="fas fa-piggy-bank fa-4x mb-3"></i>
@@ -170,7 +173,7 @@ session_start();
                 }
                 
                 let html = '';
-                budgets.forEach(budget => {
+                budgetsData.forEach(budget => {
                     const statusClass = budget.status === 'success' ? 'bg-success' : 
                                        budget.status === 'warning' ? 'bg-warning' : 'bg-danger';
                     
@@ -215,6 +218,33 @@ session_start();
             }
         }
         
+        function checkExistingBudget() {
+            const month = parseInt(document.getElementById('budget-month').value);
+            const year = parseInt(document.getElementById('budget-year').value);
+            const amountInput = document.getElementById('budget-amount');
+            const budgetInfo = document.getElementById('budget-info');
+            const submitBtn = document.getElementById('submit-btn');
+            
+            // Find existing budget for selected month/year
+            const existing = budgetsData.find(b => parseInt(b.month) === month && parseInt(b.year) === year);
+            
+            if (existing) {
+                const amount = parseFloat(amountInput.value) || 0;
+                const existingAmount = parseFloat(existing.amount.replace(/,/g, ''));
+                const newTotal = existingAmount + amount;
+                
+                if (amount > 0) {
+                    budgetInfo.innerHTML = `<span class="text-info"><i class="fas fa-info-circle"></i> This will ADD to your existing budget of KSh ${existing.amount}. New total: <strong>KSh ${newTotal.toLocaleString()}</strong></span>`;
+                } else {
+                    budgetInfo.innerHTML = `<span class="text-warning"><i class="fas fa-exclamation-triangle"></i> A budget of KSh ${existing.amount} already exists for this month.</span>`;
+                }
+                submitBtn.textContent = 'Add to Budget';
+            } else {
+                budgetInfo.innerHTML = '';
+                submitBtn.textContent = 'Set Budget';
+            }
+        }
+        
         // Set current month and year as default
         document.addEventListener('DOMContentLoaded', function() {
             const currentMonth = new Date().getMonth() + 1;
@@ -225,6 +255,11 @@ session_start();
             
             loadUserInfo();
             loadBudgets();
+            
+            // Add event listeners for budget checking
+            document.getElementById('budget-month').addEventListener('change', checkExistingBudget);
+            document.getElementById('budget-year').addEventListener('change', checkExistingBudget);
+            document.getElementById('budget-amount').addEventListener('input', checkExistingBudget);
         });
     </script>
 </body>

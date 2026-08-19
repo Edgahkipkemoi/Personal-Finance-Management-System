@@ -64,7 +64,9 @@ function handleGet($pdo, $user_id) {
                     CASE 
                         WHEN current_amount >= target_amount THEN 'Completed'
                         WHEN DATEDIFF(deadline, CURDATE()) < 0 THEN 'Overdue'
-                        WHEN DATEDIFF(deadline, CURDATE()) <= 30 THEN 'Urgent'
+                        WHEN DATEDIFF(deadline, CURDATE()) <= 30
+                             AND current_amount < target_amount
+                             AND (current_amount / target_amount) < 0.8 THEN 'Urgent'
                         ELSE 'On Track'
                     END as status
                 FROM savings_goals 
@@ -108,6 +110,7 @@ function handleGet($pdo, $user_id) {
                 WHERE user_id = ? 
                 AND DATEDIFF(deadline, CURDATE()) BETWEEN 0 AND 30
                 AND current_amount < target_amount
+                AND (current_amount / target_amount) < 0.8
             ");
             $stmt->execute([$user_id]);
             $urgent = $stmt->fetch(PDO::FETCH_ASSOC);

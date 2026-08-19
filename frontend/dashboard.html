@@ -358,7 +358,10 @@
                 
                 html += `
                     <div class="col-md-4 mb-3">
-                        <div class="card h-100">
+                        <div class="card h-100" style="cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" 
+                             onclick="window.location.href='goals.html'"
+                             onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'"
+                             onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow=''">
                             <div class="card-body">
                                 <h6 class="card-title d-flex justify-content-between">
                                     ${goal.goal_name}
